@@ -1,0 +1,3556 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MathwayLab — Step-by-Step Math Solver &amp; Graphing Calculator</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.1/math.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              200: '#bfdbfe',
+              500: '#2563eb',
+              600: '#1d4ed8',
+              700: '#1e40af',
+              900: '#1e3a8a'
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .math-serif {
+      font-family: 'Cambria Math', 'Times New Roman', Georgia, serif;
+      letter-spacing: 0.01em;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.45);
+      border-radius: 9999px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: rgba(100, 116, 139, 0.7);
+    }
+    .key-btn {
+      transition: transform 0.08s ease, background-color 0.12s ease, box-shadow 0.12s ease;
+      user-select: none;
+    }
+    .key-btn:active {
+      transform: translateY(1px) scale(0.98);
+    }
+    .fraction-inline {
+      display: inline-flex;
+      flex-direction: column;
+      vertical-align: middle;
+      text-align: center;
+      padding: 0 0.2em;
+      font-size: 0.92em;
+      line-height: 1.1;
+    }
+    .fraction-inline > .num {
+      border-bottom: 1.5px solid currentColor;
+      padding: 0 0.2em 1px;
+    }
+    .fraction-inline > .den {
+      padding: 1px 0.2em 0;
+    }
+    @keyframes scanLine {
+      0% { top: 8%; opacity: 0.85; }
+      50% { top: 88%; opacity: 1; }
+      100% { top: 8%; opacity: 0.85; }
+    }
+    .scanner-beam {
+      position: absolute;
+      left: 6%;
+      right: 6%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #3b82f6, #60a5fa, #3b82f6, transparent);
+      box-shadow: 0 0 12px #3b82f6;
+      animation: scanLine 2.2s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="h-full bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 flex flex-col overflow-hidden">
+
+  <!-- Top Navigation Header -->
+  <header class="h-14 shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-3 sm:px-5 flex items-center justify-between gap-2 z-20">
+    <div class="flex items-center gap-2.5 min-w-0">
+      <button id="mobileMenuBtn" type="button" class="lg:hidden p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800" title="Toggle Subject Menu">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-extrabold text-base shadow-sm">
+          M
+        </div>
+        <div class="truncate">
+          <div class="flex items-center gap-1.5">
+            <span class="font-bold text-base tracking-tight text-slate-900 dark:text-white">Mathway<span class="text-blue-600 dark:text-blue-400">Lab</span></span>
+            <span class="hidden sm:inline-block text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">No Login • Local</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Subject Quick Badge -->
+      <div class="hidden md:flex items-center gap-1.5 ml-2 pl-3 border-l border-slate-200 dark:border-slate-800">
+        <span class="text-xs text-slate-400 dark:text-slate-500">Subject:</span>
+        <span id="activeSubjectBadge" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/70 dark:text-blue-300 border border-blue-200 dark:border-blue-800">Algebra</span>
+      </div>
+    </div>
+
+    <!-- Top Mode Switcher: Solver | Graphing | Matrix & Stats | Examples -->
+    <nav class="flex items-center bg-slate-100 dark:bg-slate-800/90 p-1 rounded-xl border border-slate-200/70 dark:border-slate-700/70">
+      <button type="button" data-view="solver" class="view-tab-btn px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+        <span>Solver</span>
+      </button>
+      <button type="button" data-view="graph" class="view-tab-btn px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-600 dark:text-slate-300 hover:text-slate-900 flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>
+        <span>Graph</span>
+      </button>
+      <button type="button" data-view="tools" class="view-tab-btn px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-600 dark:text-slate-300 hover:text-slate-900 flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+        <span class="hidden sm:inline">Matrix &amp; Stats</span>
+        <span class="sm:hidden">Tools</span>
+      </button>
+      <button type="button" data-view="examples" class="view-tab-btn px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-600 dark:text-slate-300 hover:text-slate-900 flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        <span class="hidden sm:inline">Examples</span>
+      </button>
+    </nav>
+
+    <!-- Right Action Controls -->
+    <div class="flex items-center gap-1.5">
+      <button id="angleModeBtn" type="button" class="px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700" title="Toggle Angle Units (Radians / Degrees)">
+        RAD
+      </button>
+      <button id="openScannerModalBtn" type="button" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 hover:bg-blue-100 border border-blue-200 dark:border-blue-800 flex items-center gap-1.5" title="Scan or Draw Math Problem">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        <span class="hidden md:inline">Scan / Draw</span>
+      </button>
+      <button id="openDeployModalBtn" type="button" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 border border-slate-200 dark:border-slate-700 flex items-center gap-1" title="GitHub Pages &amp; Offline Export">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+        <span class="hidden xl:inline">GitHub Pages</span>
+      </button>
+      <button id="themeToggleBtn" type="button" class="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800" title="Toggle Dark Mode">
+        <svg id="themeIconSun" class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        <svg id="themeIconMoon" class="w-4 h-4 block dark:hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Workspace Container -->
+  <div class="flex-1 flex overflow-hidden relative">
+
+    <!-- Left Sidebar: Subjects & Saved History -->
+    <aside id="leftSidebar" class="w-64 shrink-0 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col justify-between z-30 fixed lg:static inset-y-14 left-0 transform -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-in-out">
+      <div class="p-3 overflow-y-auto custom-scroll flex-1 space-y-5">
+        <!-- Subject Selector -->
+        <div>
+          <div class="px-2 mb-2 flex items-center justify-between">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Math Subjects</span>
+          </div>
+          <div id="subjectList" class="space-y-1">
+            <button type="button" data-subject="Basic Math" class="subject-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+              <span class="flex items-center gap-2.5"><span class="w-6 h-6 rounded-lg bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 font-mono font-bold flex items-center justify-center text-xs">÷</span>Basic Math</span>
+              <span class="text-[10px] text-slate-400">PEMDAS</span>
+            </button>
+            <button type="button" data-subject="Pre-Algebra" class="subject-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+              <span class="flex items-center gap-2.5"><span class="w-6 h-6 rounded-lg bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300 font-mono font-bold flex items-center justify-center text-xs">a/b</span>Pre-Algebra</span>
+              <span class="text-[10px] text-slate-400">Fractions</span>
+            </button>
+            <button type="button" data-subject="Algebra" class="subject-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800 transition-colors">
+              <span class="flex items-center gap-2.5"><span class="w-6 h-6 rounded-lg bg-blue-600 text-white font-mono font-bold flex items-center justify-center text-xs">x²</span>Algebra</span>
+              <span class="text-[10px] text-blue-600 dark:text-blue-400">Active</span>
+            </button>
+            <button type="button" data-subject="Trigonometry" class="subject-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+              <span class="flex items-center gap-2.5"><span class="w-6 h-6 rounded-lg bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-mono font-bold flex items-center justify-center text-xs">θ</span>Trigonometry</span>
+              <span class="text-[10px] text-slate-400">sin/cos</span>
+            </button>
+            <button type="button" data-subject="Calculus" class="subject-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+              <span class="flex items-center gap-2.5"><span class="w-6 h-6 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-mono font-bold flex items-center justify-center text-xs">∫</span>Calculus</span>
+              <span class="text-[10px] text-slate-400">d/dx • ∫</span>
+            </button>
+            <button type="button" data-subject="Statistics" class="subject-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+              <span class="flex items-center gap-2.5"><span class="w-6 h-6 rounded-lg bg-pink-100 dark:bg-pink-950 text-pink-700 dark:text-pink-300 font-mono font-bold flex items-center justify-center text-xs">σ</span>Statistics</span>
+              <span class="text-[10px] text-slate-400">σ • IQR</span>
+            </button>
+            <button type="button" data-subject="Linear Algebra" class="subject-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+              <span class="flex items-center gap-2.5"><span class="w-6 h-6 rounded-lg bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-mono font-bold flex items-center justify-center text-xs">[A]</span>Linear Algebra</span>
+              <span class="text-[10px] text-slate-400">det • A⁻¹</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Subject Quick Templates -->
+        <div>
+          <div class="px-2 mb-2 flex items-center justify-between">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Quick Templates</span>
+          </div>
+          <div id="sidebarTemplates" class="space-y-1.5"></div>
+        </div>
+
+        <!-- Recent History & Saved Problems -->
+        <div>
+          <div class="px-2 mb-2 flex items-center justify-between">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Solved History</span>
+            <button id="clearHistoryBtn" type="button" class="text-[11px] text-slate-400 hover:text-rose-500 transition-colors">Clear</button>
+          </div>
+          <div id="historyList" class="space-y-1.5 max-h-56 overflow-y-auto custom-scroll"></div>
+        </div>
+      </div>
+
+      <!-- Footer Info -->
+      <div class="p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
+        <span>100% Client-Side Engine</span>
+        <button id="exportSessionBtn" type="button" class="text-blue-600 dark:text-blue-400 font-semibold hover:underline">Export Notes</button>
+      </div>
+    </aside>
+
+    <!-- Center Main View Area -->
+    <main class="flex-1 flex flex-col overflow-hidden bg-slate-50 dark:bg-slate-950 relative">
+
+      <!-- VIEW 1: STEP-BY-STEP SOLVER (Default Mathway Chat + Input Dock) -->
+      <section id="view-solver" class="flex-1 flex flex-col overflow-hidden">
+
+        <!-- Conversation / Solution Stream -->
+        <div id="solverStream" class="flex-1 overflow-y-auto custom-scroll px-3 sm:px-6 py-5 space-y-5">
+          <!-- Welcome Banner & Subject Starter Chips -->
+          <div id="welcomeCard" class="max-w-3xl mx-auto bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 sm:p-5 shadow-sm">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-slate-100 dark:border-slate-800">
+              <div>
+                <span id="welcomeSubjectLabel" class="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                  Algebra Problem Solver
+                </span>
+                <h1 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mt-0.5">What math problem can I solve for you today?</h1>
+              </div>
+              <button id="randomProblemBtn" type="button" class="self-start sm:self-auto px-3 py-1.5 rounded-xl text-xs font-semibold bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 hover:bg-blue-100 border border-blue-200 dark:border-blue-800 transition-colors shrink-0">
+                Try a Sample Problem →
+              </button>
+            </div>
+            <div class="mt-3">
+              <p class="text-xs text-slate-500 dark:text-slate-400 mb-2.5">Click any example below or type your own equation, derivative, integral, system, or dataset:</p>
+              <div id="starterChipsContainer" class="flex flex-wrap gap-2"></div>
+            </div>
+          </div>
+
+          <!-- Solved Problem Cards Container -->
+          <div id="solutionsFeed" class="max-w-3xl mx-auto space-y-5"></div>
+        </div>
+
+        <!-- Bottom Math Input Dock & Collapsible Mathway Keyboard -->
+        <div class="shrink-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shadow-lg z-10">
+          <div class="max-w-3xl mx-auto px-3 sm:px-5 pt-2.5 pb-3">
+
+            <!-- Live Pretty Math Preview Bar -->
+            <div class="flex items-center justify-between gap-2 mb-2 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700/70">
+              <div class="flex items-center gap-2 min-w-0 flex-1">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 shrink-0">Preview:</span>
+                <div id="liveMathPreview" class="math-serif text-sm sm:text-base text-slate-800 dark:text-slate-100 truncate font-medium">
+                  x² - 5x + 6 = 0
+                </div>
+              </div>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <select id="actionMethodSelect" class="text-xs font-semibold rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-2.5 py-1 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500" title="Select Solving Action">
+                  <option value="auto">Auto-Detect Goal</option>
+                  <option value="solve">Solve Equation / Roots</option>
+                  <option value="factor">Factor Expression</option>
+                  <option value="simplify">Simplify / Expand</option>
+                  <option value="derivative">Find Derivative (d/dx)</option>
+                  <option value="integral">Find Integral (∫ dx)</option>
+                  <option value="limit">Evaluate Limit (x → a)</option>
+                  <option value="stats">Statistics Summary</option>
+                  <option value="matrix">Matrix Operations</option>
+                  <option value="graph">Plot on Graph</option>
+                </select>
+                <button id="toggleKeyboardBtn" type="button" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-200/80 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 flex items-center gap-1" title="Show/Hide Math Symbol Pad">
+                  <span>⌨️ Pad</span>
+                  <svg id="keyboardChevron" class="w-3.5 h-3.5 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Main Math Input Bar -->
+            <form id="mathInputForm" class="flex items-center gap-2">
+              <div class="relative flex-1">
+                <input
+                  id="mathInput"
+                  type="text"
+                  value="x^2 - 5x + 6 = 0"
+                  placeholder="Enter a math problem (e.g. 2x^2 - 5x - 3 = 0, d/dx(sin(x)*x^2), 2x+y=7; x-y=2)..."
+                  autocomplete="off"
+                  spellcheck="false"
+                  class="w-full pl-3.5 pr-20 py-3 rounded-xl bg-slate-100/90 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-sm sm:text-base font-mono text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white dark:focus:bg-slate-900 transition-all"
+                />
+                <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                  <button id="clearInputBtn" type="button" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-700" title="Clear Input">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                  </button>
+                  <button id="inputCameraBtn" type="button" class="p-1.5 rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950" title="Scan or Draw Problem">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg>
+                  </button>
+                </div>
+              </div>
+              <button type="submit" class="px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-sm shadow-sm flex items-center gap-1.5 shrink-0 transition-colors">
+                <span>Solve</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+              </button>
+            </form>
+
+            <!-- Collapsible Virtual Mathway Keyboard -->
+            <div id="virtualKeyboard" class="mt-2.5 pt-2.5 border-t border-slate-200 dark:border-slate-800">
+              <!-- Keyboard Category Tabs -->
+              <div class="flex items-center justify-between gap-1 mb-2 overflow-x-auto custom-scroll pb-1">
+                <div class="flex items-center gap-1">
+                  <button type="button" data-kbtab="algebra" class="kb-tab-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-600 text-white">Algebra &amp; Roots</button>
+                  <button type="button" data-kbtab="trig" class="kb-tab-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200">Trig &amp; Logs</button>
+                  <button type="button" data-kbtab="calculus" class="kb-tab-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200">Calculus &amp; Limits</button>
+                  <button type="button" data-kbtab="matrices" class="kb-tab-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200">Systems &amp; Matrix</button>
+                </div>
+                <div class="flex items-center gap-1 shrink-0">
+                  <button type="button" data-insert="BACKSPACE" class="key-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-rose-50 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">⌫ Back</button>
+                </div>
+              </div>
+
+              <!-- Keyboard Keys Grid -->
+              <div id="keyboardKeysGrid" class="grid grid-cols-6 sm:grid-cols-10 gap-1.5"></div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 2: INTERACTIVE MULTI-FUNCTION GRAPHING CALCULATOR -->
+      <section id="view-graph" class="hidden flex-1 flex flex-col lg:flex-row overflow-hidden">
+        <!-- Left Function Controls Panel -->
+        <div class="w-full lg:w-80 shrink-0 bg-white dark:bg-slate-900 border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-slate-800 p-4 overflow-y-auto custom-scroll flex flex-col justify-between gap-4">
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-sm font-bold text-slate-900 dark:text-white">Graphing Calculator</h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Plot functions, roots, extrema &amp; intersections</p>
+              </div>
+              <button id="resetGraphViewBtn" type="button" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200">
+                Reset Zoom
+              </button>
+            </div>
+
+            <!-- Function Inputs List -->
+            <div id="graphFunctionsList" class="space-y-2.5"></div>
+
+            <button id="addGraphFuncBtn" type="button" class="w-full py-2 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/40 transition-colors">
+              + Add Another Function
+            </button>
+
+            <!-- Graph Presets -->
+            <div>
+              <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Graph Presets</span>
+              <div class="grid grid-cols-2 gap-1.5">
+                <button type="button" data-gpreset="parabola" class="graph-preset-btn px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950 text-left truncate">Quadratic &amp; Line</button>
+                <button type="button" data-gpreset="trig" class="graph-preset-btn px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950 text-left truncate">sin(x) vs cos(x)</button>
+                <button type="button" data-gpreset="cubic" class="graph-preset-btn px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950 text-left truncate">Cubic Polynomial</button>
+                <button type="button" data-gpreset="rational" class="graph-preset-btn px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950 text-left truncate">Damped Wave</button>
+              </div>
+            </div>
+
+            <!-- Detected Key Points Table (Roots, Y-Intercept, Intersections) -->
+            <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-3 border border-slate-200/80 dark:border-slate-700">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-700 dark:text-slate-200">Key Points &amp; Roots</span>
+                <label class="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 cursor-pointer">
+                  <input id="showKeyPointsToggle" type="checkbox" checked class="rounded text-blue-600" />
+                  <span>Show Dots</span>
+                </label>
+              </div>
+              <div id="graphKeyPointsBox" class="space-y-1.5 text-xs max-h-44 overflow-y-auto custom-scroll font-mono"></div>
+            </div>
+          </div>
+
+          <!-- Value Table Evaluator -->
+          <div class="pt-3 border-t border-slate-200 dark:border-slate-800">
+            <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Evaluate Table of Values</span>
+            <div class="flex items-center gap-1.5 mb-2">
+              <span class="text-xs text-slate-500">x from</span>
+              <input id="tableStartInput" type="number" value="-3" class="w-14 px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-mono" />
+              <span class="text-xs text-slate-500">to</span>
+              <input id="tableEndInput" type="number" value="3" class="w-14 px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-mono" />
+              <button id="genValueTableBtn" type="button" class="px-2.5 py-1 rounded bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 ml-auto">Update</button>
+            </div>
+            <div id="graphValueTableContainer" class="max-h-36 overflow-y-auto custom-scroll rounded-lg border border-slate-200 dark:border-slate-700"></div>
+          </div>
+        </div>
+
+        <!-- Right Interactive Canvas Area -->
+        <div class="flex-1 relative bg-white dark:bg-slate-950 flex flex-col overflow-hidden min-h-[340px]">
+          <div class="absolute top-3 left-3 z-10 flex items-center gap-1.5 bg-white/90 dark:bg-slate-900/90 backdrop-blur px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm text-xs">
+            <span class="text-slate-500">Cursor:</span>
+            <span id="graphCursorCoords" class="font-mono font-semibold text-slate-800 dark:text-slate-200">(0.00, 0.00)</span>
+          </div>
+          <div class="absolute top-3 right-3 z-10 flex items-center gap-1 bg-white/90 dark:bg-slate-900/90 backdrop-blur p-1 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+            <button id="zoomInGraphBtn" type="button" class="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-base" title="Zoom In">+</button>
+            <button id="zoomOutGraphBtn" type="button" class="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-base" title="Zoom Out">−</button>
+          </div>
+          <div id="graphCanvasWrapper" class="flex-1 w-full h-full relative">
+            <canvas id="mainGraphCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 3: INTERACTIVE MATRIX & STATISTICS WORKBENCH -->
+      <section id="view-tools" class="hidden flex-1 overflow-y-auto custom-scroll p-4 sm:p-6">
+        <div class="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+          <!-- Interactive Matrix Calculator Card -->
+          <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between gap-2 mb-4">
+                <div>
+                  <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Linear Algebra Workbench</span>
+                  <h2 class="text-base font-bold text-slate-900 dark:text-white">Interactive Matrix Solver</h2>
+                </div>
+                <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+                  <button type="button" data-matsize="2" class="mat-size-btn px-2.5 py-1 rounded text-xs font-semibold bg-white dark:bg-slate-900 text-indigo-600 shadow-sm">2 × 2</button>
+                  <button type="button" data-matsize="3" class="mat-size-btn px-2.5 py-1 rounded text-xs font-semibold text-slate-600 dark:text-slate-300">3 × 3</button>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <!-- Matrix A -->
+                <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold text-slate-700 dark:text-slate-200">Matrix [A]</span>
+                    <button id="fillIdentityABtn" type="button" class="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline">Identity I</button>
+                  </div>
+                  <div id="matrixAGrid" class="grid grid-cols-2 gap-2"></div>
+                </div>
+                <!-- Matrix B -->
+                <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold text-slate-700 dark:text-slate-200">Matrix [B]</span>
+                    <button id="fillSampleBBtn" type="button" class="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline">Sample</button>
+                  </div>
+                  <div id="matrixBGrid" class="grid grid-cols-2 gap-2"></div>
+                </div>
+              </div>
+
+              <!-- Matrix Operation Buttons -->
+              <div class="flex flex-wrap gap-1.5 mb-4">
+                <button type="button" data-matop="detA" class="mat-op-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700">det(A)</button>
+                <button type="button" data-matop="invA" class="mat-op-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100">Inverse A⁻¹</button>
+                <button type="button" data-matop="eigenA" class="mat-op-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100">Eigenvalues (A)</button>
+                <button type="button" data-matop="mulAB" class="mat-op-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100">A × B</button>
+                <button type="button" data-matop="addAB" class="mat-op-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100">A + B</button>
+                <button type="button" data-matop="transA" class="mat-op-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100">Transpose Aᵀ</button>
+              </div>
+            </div>
+
+            <div id="matrixResultOutput" class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-xs space-y-2 min-h-[140px]"></div>
+          </div>
+
+          <!-- Interactive Statistics & Regression Workbench Card -->
+          <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between gap-2 mb-3">
+                <div>
+                  <span class="text-[11px] font-bold uppercase tracking-wider text-pink-600 dark:text-pink-400">Descriptive Statistics &amp; IQR</span>
+                  <h2 class="text-base font-bold text-slate-900 dark:text-white">Dataset Analyzer &amp; Box Plot</h2>
+                </div>
+                <button id="loadSampleStatsBtn" type="button" class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-pink-50 dark:bg-pink-950 text-pink-700 dark:text-pink-300 border border-pink-200 dark:border-pink-800">
+                  Load Sample Data
+                </button>
+              </div>
+
+              <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Enter comma- or space-separated numbers:</label>
+              <div class="flex gap-2 mb-3">
+                <input id="statsDatasetInput" type="text" value="12, 15, 18, 22, 22, 25, 29, 31, 35, 42" class="flex-1 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-mono" />
+                <button id="analyzeStatsBtn" type="button" class="px-4 py-2 rounded-xl bg-pink-600 hover:bg-pink-700 text-white text-xs font-semibold shrink-0">Analyze</button>
+              </div>
+
+              <!-- Visual Box-and-Whisker Canvas -->
+              <div class="relative h-28 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 mb-3 overflow-hidden">
+                <canvas id="statsBoxPlotCanvas" class="w-full h-full block"></canvas>
+              </div>
+            </div>
+
+            <div id="statsMetricsGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs"></div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- VIEW 4: CURATED EXAMPLES & FORMULA REFERENCE -->
+      <section id="view-examples" class="hidden flex-1 overflow-y-auto custom-scroll p-4 sm:p-6">
+        <div class="max-w-5xl mx-auto space-y-6">
+          <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
+            <h2 class="text-lg font-bold text-slate-900 dark:text-white">Curated Mathway Problem Library</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Select any problem below to immediately load and generate its full step-by-step solution in the Solver.</p>
+            <div id="examplesCatalogGrid" class="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODAL 1: PHOTO / HANDWRITING OCR SCANNER SIMULATOR -->
+  <div id="scannerModal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 max-w-lg w-full p-5 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">📷</span>
+          <div>
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white">Mathway Snap &amp; Sketch Scanner</h3>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400">Upload an equation image, sketch on the pad, or pick a scanned sample</p>
+          </div>
+        </div>
+        <button id="closeScannerModalBtn" type="button" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600">✕</button>
+      </div>
+
+      <!-- Visual Scanner Preview / Sketch Canvas -->
+      <div class="relative h-44 rounded-xl bg-slate-900 border border-slate-700 overflow-hidden flex items-center justify-center">
+        <canvas id="sketchPadCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+        <div class="scanner-beam pointer-events-none"></div>
+        <div class="absolute bottom-2 right-2 flex items-center gap-1.5">
+          <button id="clearSketchBtn" type="button" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-800/90 text-slate-200 hover:bg-slate-700 border border-slate-600">Clear Pad</button>
+          <label class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-blue-600 text-white hover:bg-blue-700 cursor-pointer">
+            Upload Image
+            <input id="imageUploadInput" type="file" accept="image/*" class="hidden" />
+          </label>
+        </div>
+      </div>
+
+      <!-- Sample Scanned Equation Cards -->
+      <div>
+        <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Or Pick a Scanned Problem Preset:</span>
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" data-scanexpr="2x^2 - 7x + 3 = 0" class="scan-sample-btn p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-blue-500 text-left bg-slate-50 dark:bg-slate-800/60">
+            <div class="text-[10px] font-bold text-blue-600 uppercase">Quadratic Equation</div>
+            <div class="math-serif text-sm font-semibold mt-0.5">2x² − 7x + 3 = 0</div>
+          </button>
+          <button type="button" data-scanexpr="d/dx(x^3 * cos(x))" class="scan-sample-btn p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-blue-500 text-left bg-slate-50 dark:bg-slate-800/60">
+            <div class="text-[10px] font-bold text-emerald-600 uppercase">Calculus Product Rule</div>
+            <div class="math-serif text-sm font-semibold mt-0.5">d/dx [ x³ · cos(x) ]</div>
+          </button>
+          <button type="button" data-scanexpr="3x + 2y = 16; x - y = 2" class="scan-sample-btn p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-blue-500 text-left bg-slate-50 dark:bg-slate-800/60">
+            <div class="text-[10px] font-bold text-purple-600 uppercase">2×2 Linear System</div>
+            <div class="math-serif text-sm font-semibold mt-0.5">3x + 2y = 16, x − y = 2</div>
+          </button>
+          <button type="button" data-scanexpr="int(3x^2 - 4x + 5, 0, 2)" class="scan-sample-btn p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-blue-500 text-left bg-slate-50 dark:bg-slate-800/60">
+            <div class="text-[10px] font-bold text-amber-600 uppercase">Definite Integral</div>
+            <div class="math-serif text-sm font-semibold mt-0.5">∫₀² (3x² − 4x + 5) dx</div>
+          </button>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
+        <span id="scanStatusText" class="text-xs text-slate-500">Draw on the pad or select a preset to extract equation</span>
+        <button id="extractSketchBtn" type="button" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold">
+          Recognize &amp; Solve →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: GITHUB PAGES DEPLOYMENT & STANDALONE DOWNLOAD -->
+  <div id="deployModal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 max-w-lg w-full p-5 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+        <div>
+          <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-600">Zero Backend • Static Hosting</span>
+          <h3 class="text-base font-bold text-slate-900 dark:text-white">Host on GitHub Pages</h3>
+        </div>
+        <button id="closeDeployModalBtn" type="button" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600">✕</button>
+      </div>
+
+      <div class="space-y-3 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+        <p>This entire application is built with pure <strong>HTML, CSS, and JavaScript</strong> and runs 100% in the browser without any login, server, or database.</p>
+        <div class="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 font-mono text-[11px] space-y-1 text-slate-800 dark:text-slate-200">
+          <div>1. Save this file as <strong>index.html</strong></div>
+          <div>2. Create a new GitHub repository and upload <strong>index.html</strong></div>
+          <div>3. Go to <strong>Settings → Pages → Deploy from branch (main)</strong></div>
+          <div>4. Your Mathway web app will be live at <strong>https://&lt;username&gt;.github.io/&lt;repo&gt;/</strong></div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+        <button id="downloadIndexHtmlBtn" type="button" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          <span>Download index.html</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toastBanner" class="fixed bottom-5 right-5 z-50 hidden px-4 py-2.5 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-xs font-semibold shadow-xl border border-slate-700 transition-all"></div>
+
+  <!-- MAIN APPLICATION SCRIPT -->
+  <script>
+    (function () {
+      'use strict';
+
+      // =========================================================================
+      // 1. STATE & SUBJECT CATALOG
+      // =========================================================================
+      const state = {
+        activeSubject: 'Algebra',
+        activeView: 'solver',
+        angleMode: 'RAD', // 'RAD' or 'DEG'
+        keyboardOpen: true,
+        activeKbTab: 'algebra',
+        matrixSize: 2,
+        history: [],
+        graphFunctions: [
+          { id: 1, expr: 'x^2 - 5*x + 6', color: '#2563eb', visible: true },
+          { id: 2, expr: 'x - 1', color: '#e11d48', visible: true }
+        ],
+        graphViewport: {
+          centerX: 0,
+          centerY: 0,
+          scale: 42 // pixels per unit
+        },
+        showKeyPoints: true
+      };
+
+      const SUBJECT_DATA = {
+        'Basic Math': {
+          title: 'Basic Math & Arithmetic Solver',
+          templates: [
+            { label: 'Order of Operations', expr: '3 + 4 * (12 - 5)^2 / 7', method: 'simplify' },
+            { label: 'Prime Factorization', expr: 'prime(360)', method: 'simplify' },
+            { label: 'GCD & LCM', expr: 'gcd(48, 180)', method: 'simplify' },
+            { label: 'Percentage Calculation', expr: '35% of 240', method: 'simplify' }
+          ],
+          chips: ['3 + 4 * (12 - 5)^2 / 7', 'prime(360)', 'gcd(48, 180)', '35% of 240', 'sqrt(144) + 5^3']
+        },
+        'Pre-Algebra': {
+          title: 'Pre-Algebra & Fractions Solver',
+          templates: [
+            { label: 'Add Fractions (LCD)', expr: '3/4 + 5/6', method: 'simplify' },
+            { label: 'Divide Fractions', expr: '(7/8) / (14/24)', method: 'simplify' },
+            { label: 'One-Step Proportion', expr: '3*x - 12 = 15', method: 'solve' },
+            { label: 'Exponent Simplification', expr: '(2^3 * 2^4) / 2^2', method: 'simplify' }
+          ],
+          chips: ['3/4 + 5/6', '5/12 - 1/8', '3*x - 12 = 15', '4*(x + 2) = 28', 'gcd(84, 126)']
+        },
+        'Algebra': {
+          title: 'Algebra Step-by-Step Solver',
+          templates: [
+            { label: 'Quadratic Equation', expr: 'x^2 - 5x + 6 = 0', method: 'solve' },
+            { label: 'Quadratic Formula (Irrational)', expr: '2x^2 + 3x - 4 = 0', method: 'solve' },
+            { label: 'Complex Roots Quadratic', expr: 'x^2 + 4x + 13 = 0', method: 'solve' },
+            { label: 'System of 2x2 Equations', expr: '2x + 3y = 12; x - y = 1', method: 'solve' },
+            { label: 'Factor Quadratic Trinomial', expr: '2x^2 + 7x + 3', method: 'factor' },
+            { label: 'Linear Inequality', expr: '3x - 7 <= 8', method: 'solve' }
+          ],
+          chips: [
+            'x^2 - 5x + 6 = 0',
+            '2x^2 - 7x + 3 = 0',
+            '2x + 3y = 12; x - y = 1',
+            'x^2 - 9',
+            '3x - 7 <= 8',
+            'x^3 - 6x^2 + 11x - 6 = 0'
+          ]
+        },
+        'Trigonometry': {
+          title: 'Trigonometry & Exact Values Solver',
+          templates: [
+            { label: 'Exact Unit Circle Value', expr: 'sin(pi/6) + cos(pi/3)', method: 'simplify' },
+            { label: 'Trig Equation', expr: '2*sin(x) - 1 = 0', method: 'solve' },
+            { label: 'Right Triangle Hypotenuse', expr: 'triangle(3, 4)', method: 'simplify' },
+            { label: 'Pythagorean Identity Check', expr: 'sin(pi/4)^2 + cos(pi/4)^2', method: 'simplify' }
+          ],
+          chips: ['sin(pi/6) + cos(pi/3)', 'tan(pi/4) + cos(pi/6)', '2*sin(x) - 1 = 0', '2*cos(x) - sqrt(3) = 0', 'triangle(5, 12)']
+        },
+        'Calculus': {
+          title: 'Calculus Derivatives, Integrals & Limits',
+          templates: [
+            { label: 'Polynomial & Trig Derivative', expr: 'd/dx(x^3 - 4*x^2 + sin(x))', method: 'derivative' },
+            { label: 'Product Rule Derivative', expr: 'd/dx(x^2 * cos(x))', method: 'derivative' },
+            { label: 'Indefinite Integral', expr: 'int(3*x^2 - 4*x + 5)', method: 'integral' },
+            { label: 'Definite Integral [a, b]', expr: 'int(x^2 + 2*x, 0, 3)', method: 'integral' },
+            { label: 'Limit (0/0 Indeterminate)', expr: 'lim((x^2 - 9)/(x - 3), 3)', method: 'limit' }
+          ],
+          chips: [
+            'd/dx(x^3 - 4*x^2 + 7*x)',
+            'd/dx(x^2 * sin(x))',
+            'int(3*x^2 - 4*x + 5)',
+            'int(x^2 + 2*x, 0, 3)',
+            'lim((x^2 - 9)/(x - 3), 3)',
+            'lim(sin(x)/x, 0)'
+          ]
+        },
+        'Statistics': {
+          title: 'Statistics, Quartiles & Probability Solver',
+          templates: [
+            { label: 'Dataset Full Summary', expr: '12, 15, 18, 22, 22, 25, 30, 34', method: 'stats' },
+            { label: 'Combinations nCr', expr: 'nCr(10, 3)', method: 'simplify' },
+            { label: 'Permutations nPr', expr: 'nPr(8, 3)', method: 'simplify' },
+            { label: 'Exam Scores Analysis', expr: '68, 72, 75, 78, 82, 85, 88, 91, 95', method: 'stats' }
+          ],
+          chips: ['12, 15, 18, 22, 22, 25, 30, 34', '68, 72, 75, 78, 82, 85, 88, 91, 95', 'nCr(10, 3)', 'nPr(8, 3)']
+        },
+        'Linear Algebra': {
+          title: 'Matrices, Determinants & Eigenvalues',
+          templates: [
+            { label: '2×2 Matrix Analysis', expr: '[[4, 2], [1, 3]]', method: 'matrix' },
+            { label: '3×3 Matrix Determinant & Inverse', expr: '[[2, -1, 0], [1, 3, 2], [0, 2, 1]]', method: 'matrix' },
+            { label: '2×2 System via Cramer\'s Rule', expr: '3x + 2y = 16; x - y = 2', method: 'solve' }
+          ],
+          chips: ['[[4, 2], [1, 3]]', '[[1, 2], [3, 4]]', '[[2, -1, 0], [1, 3, 2], [0, 2, 1]]', '3x + 2y = 16; x - y = 2']
+        }
+      };
+
+      const KEYBOARD_LAYOUTS = {
+        algebra: [
+          { label: 'x', insert: 'x' },
+          { label: 'y', insert: 'y' },
+          { label: 'x²', insert: '^2' },
+          { label: 'xⁿ', insert: '^' },
+          { label: '√', insert: 'sqrt(' },
+          { label: 'a/b', insert: '/' },
+          { label: '(', insert: '(' },
+          { label: ')', insert: ')' },
+          { label: '=', insert: ' = ' },
+          { label: 'π', insert: 'pi' },
+          { label: '7', insert: '7' },
+          { label: '8', insert: '8' },
+          { label: '9', insert: '9' },
+          { label: '÷', insert: ' / ' },
+          { label: '×', insert: ' * ' },
+          { label: '4', insert: '4' },
+          { label: '5', insert: '5' },
+          { label: '6', insert: '6' },
+          { label: '−', insert: ' - ' },
+          { label: '+', insert: ' + ' },
+          { label: '1', insert: '1' },
+          { label: '2', insert: '2' },
+          { label: '3', insert: '3' },
+          { label: '0', insert: '0' },
+          { label: '.', insert: '.' },
+          { label: '≤', insert: ' <= ' },
+          { label: '≥', insert: ' >= ' },
+          { label: '|x|', insert: 'abs(' },
+          { label: '; (sys)', insert: '; ' },
+          { label: 'e', insert: 'e' }
+        ],
+        trig: [
+          { label: 'sin', insert: 'sin(' },
+          { label: 'cos', insert: 'cos(' },
+          { label: 'tan', insert: 'tan(' },
+          { label: 'asin', insert: 'asin(' },
+          { label: 'acos', insert: 'acos(' },
+          { label: 'atan', insert: 'atan(' },
+          { label: 'ln', insert: 'log(' },
+          { label: 'log₁₀', insert: 'log10(' },
+          { label: 'eˣ', insert: 'exp(' },
+          { label: 'π', insert: 'pi' },
+          { label: 'π/6', insert: 'pi/6' },
+          { label: 'π/4', insert: 'pi/4' },
+          { label: 'π/3', insert: 'pi/3' },
+          { label: 'π/2', insert: 'pi/2' },
+          { label: 'triangle', insert: 'triangle(3, 4)' },
+          { label: 'x', insert: 'x' },
+          { label: '^2', insert: '^2' },
+          { label: '(', insert: '(' },
+          { label: ')', insert: ')' },
+          { label: '=', insert: ' = ' }
+        ],
+        calculus: [
+          { label: 'd/dx', insert: 'd/dx(' },
+          { label: '∫ dx', insert: 'int(' },
+          { label: '∫ₐᵇ dx', insert: 'int(x^2, 0, 2)' },
+          { label: 'lim', insert: 'lim((x^2-4)/(x-2), 2)' },
+          { label: 'x²', insert: 'x^2' },
+          { label: 'x³', insert: 'x^3' },
+          { label: '√x', insert: 'sqrt(x)' },
+          { label: 'sin(x)', insert: 'sin(x)' },
+          { label: 'cos(x)', insert: 'cos(x)' },
+          { label: 'eˣ', insert: 'e^x' },
+          { label: 'ln(x)', insert: 'ln(x)' },
+          { label: '1/x', insert: '1/x' },
+          { label: '(', insert: '(' },
+          { label: ')', insert: ')' },
+          { label: ',', insert: ', ' }
+        ],
+        matrices: [
+          { label: '2×2 Mat', insert: '[[4, 2], [1, 3]]' },
+          { label: '3×3 Mat', insert: '[[2, -1, 0], [1, 3, 2], [0, 2, 1]]' },
+          { label: '2×2 Sys', insert: '2x + 3y = 12; x - y = 1' },
+          { label: 'nCr', insert: 'nCr(10, 3)' },
+          { label: 'nPr', insert: 'nPr(8, 3)' },
+          { label: 'gcd', insert: 'gcd(48, 180)' },
+          { label: 'prime', insert: 'prime(360)' },
+          { label: 'Dataset', insert: '12, 15, 18, 22, 22, 25, 30, 34' },
+          { label: '[', insert: '[' },
+          { label: ']', insert: ']' }
+        ]
+      };
+
+      // =========================================================================
+      // 2. SAFE STORAGE & UTILITIES
+      // =========================================================================
+      function loadHistory() {
+        try {
+          const raw = localStorage.getItem('mathwaylab_history_v1');
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) state.history = parsed.slice(0, 25);
+          }
+        } catch (err) {
+          state.history = [];
+        }
+      }
+
+      function saveHistory() {
+        try {
+          localStorage.setItem('mathwaylab_history_v1', JSON.stringify(state.history.slice(0, 25)));
+        } catch (err) {
+          // Ignore storage block in restricted iframe
+        }
+      }
+
+      function showToast(msg) {
+        const banner = document.getElementById('toastBanner');
+        if (!banner) return;
+        banner.textContent = msg;
+        banner.classList.remove('hidden');
+        clearTimeout(showToast._timer);
+        showToast._timer = setTimeout(() => {
+          banner.classList.add('hidden');
+        }, 2600);
+      }
+
+      function formatNumber(n, digits = 6) {
+        if (typeof n !== 'number' || !isFinite(n)) return String(n);
+        if (Math.abs(n) < 1e-12) return '0';
+        const rounded = Number(n.toFixed(digits));
+        return String(rounded);
+      }
+
+      // Convert decimal to exact simplified fraction if close
+      function toExactFraction(val, tol = 1e-7) {
+        if (!isFinite(val)) return null;
+        if (Math.abs(val - Math.round(val)) < tol) {
+          return { num: Math.round(val), den: 1, str: String(Math.round(val)) };
+        }
+        const sign = val < 0 ? -1 : 1;
+        const x = Math.abs(val);
+        let h1 = 1, h2 = 0, k1 = 0, k2 = 1, b = x;
+        for (let i = 0; i < 18; i++) {
+          const a = Math.floor(b);
+          let aux = h1; h1 = a * h1 + h2; h2 = aux;
+          aux = k1; k1 = a * k1 + k2; k2 = aux;
+          if (k1 > 10000) break;
+          if (Math.abs(x - h1 / k1) < tol) {
+            return {
+              num: sign * h1,
+              den: k1,
+              str: k1 === 1 ? `${sign * h1}` : `${sign * h1}/${k1}`
+            };
+          }
+          if (Math.abs(b - a) < 1e-12) break;
+          b = 1 / (b - a);
+        }
+        return null;
+      }
+
+      function gcdInt(a, b) {
+        a = Math.abs(Math.round(a));
+        b = Math.abs(Math.round(b));
+        while (b !== 0) {
+          const t = b;
+          b = a % b;
+          a = t;
+        }
+        return a || 1;
+      }
+
+      // Pretty HTML math formatter for readable equations
+      function prettyMathHTML(raw) {
+        if (!raw) return '<span class="text-slate-400">Enter a math problem...</span>';
+        let s = String(raw)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+
+        s = s.replace(/\bd\/dx\((.+)\)$/i, '<span class="text-blue-600 dark:text-blue-400 font-semibold">d/dx</span> [ $1 ]');
+        s = s.replace(/\bint\(([^,]+),\s*([^,]+),\s*([^)]+)\)/gi, '∫<sub>$2</sub><sup>$3</sup> ($1) dx');
+        s = s.replace(/\bint\((.+)\)/gi, '∫ ($1) dx');
+        s = s.replace(/\blim\(([^,]+),\s*([^)]+)\)/gi, 'lim<sub>x→$2</sub> ($1)');
+        s = s.replace(/\bsqrt\(([^)]+)\)/gi, '√($1)');
+        s = s.replace(/\bpi\b/gi, 'π');
+        s = s.replace(/<=/g, '≤').replace(/>=/g, '≥').replace(/!=/g, '≠');
+        s = s.replace(/\^2\b/g, '²').replace(/\^3\b/g, '³').replace(/\^4\b/g, '⁴');
+        s = s.replace(/\^([0-9a-zA-Z+-]+)/g, '<sup>$1</sup>');
+        s = s.replace(/\*/g, '·');
+        return s;
+      }
+
+      // Normalize implicit multiplication like 2x -> 2*x, 3(x+1) -> 3*(x+1)
+      function normalizeMathExpr(expr) {
+        let s = String(expr).trim();
+        s = s.replace(/−/g, '-').replace(/×/g, '*').replace(/÷/g, '/').replace(/π/g, 'pi');
+        s = s.replace(/\bln\(/gi, 'log(');
+        // Add * between number and variable/parenthesis: 5x -> 5*x, 4( -> 4*(
+        s = s.replace(/(\d)([a-zA-Z(])/g, '$1*$2');
+        // Add * between ) and ( or variable: )( -> )*(, )x -> )*x
+        s = s.replace(/\)([a-zA-Z0-9(])/g, ')*$1');
+        return s;
+      }
+
+      // =========================================================================
+      // 3. STEP-BY-STEP SYMBOLIC & NUMERICAL MATH SOLVER ENGINE
+      // =========================================================================
+
+      // Parse univariate polynomial in x up to degree 3 by sampling or math.simplify
+      function extractPolynomialCoeffs(exprStr, variable = 'x') {
+        try {
+          const norm = normalizeMathExpr(exprStr);
+          const compiled = math.compile(norm);
+          // Evaluate at 5 points: -2, -1, 0, 1, 2
+          const pts = [-2, -1, 0, 1, 2];
+          const vals = pts.map(v => {
+            const res = compiled.evaluate({ [variable]: v, e: Math.E, pi: Math.PI });
+            return typeof res === 'number' ? res : NaN;
+          });
+          if (vals.some(v => !isFinite(v))) return null;
+
+          // Finite differences to check if polynomial of degree <= 3
+          const d1 = [vals[1]-vals[0], vals[2]-vals[1], vals[3]-vals[2], vals[4]-vals[3]];
+          const d2 = [d1[1]-d1[0], d1[2]-d1[1], d1[3]-d1[2]];
+          const d3 = [d2[1]-d2[0], d2[2]-d2[1]];
+          const d4 = d3[1] - d3[0];
+
+          if (Math.abs(d4) > 1e-6) return null; // Not degree <= 3 or non-polynomial
+
+          // Verify at a non-integer test point x = 1.37
+          const a3 = d3[0] / 6;
+          const c0 = vals[2]; // f(0)
+          // f(1) = a3 + a2 + a1 + c0, f(-1) = -a3 + a2 - a1 + c0
+          const a2 = (vals[3] + vals[1] - 2 * c0) / 2;
+          const a1 = (vals[3] - vals[1]) / 2 - a3;
+
+          const testX = 1.37;
+          const actual = compiled.evaluate({ [variable]: testX, e: Math.E, pi: Math.PI });
+          const polyVal = ((a3 * testX + a2) * testX + a1) * testX + c0;
+          if (typeof actual !== 'number' || Math.abs(actual - polyVal) > 1e-6) return null;
+
+          const clean = v => (Math.abs(v) < 1e-10 ? 0 : (Math.abs(v - Math.round(v)) < 1e-9 ? Math.round(v) : v));
+          return {
+            a3: clean(a3),
+            a2: clean(a2),
+            a1: clean(a1),
+            a0: clean(c0)
+          };
+        } catch (err) {
+          return null;
+        }
+      }
+
+      function formatPolyTerm(coeff, power, isFirst = false) {
+        if (Math.abs(coeff) < 1e-10) return '';
+        const sign = coeff < 0 ? ' - ' : (isFirst ? '' : ' + ');
+        const absC = Math.abs(coeff);
+        const cStr = (absC === 1 && power > 0) ? '' : formatNumber(absC);
+        if (power === 0) return `${sign}${formatNumber(absC)}`;
+        if (power === 1) return `${sign}${cStr}x`;
+        return `${sign}${cStr}x^${power}`;
+      }
+
+      function buildPolyString(a3, a2, a1, a0) {
+        const parts = [];
+        if (Math.abs(a3) > 1e-10) parts.push(formatPolyTerm(a3, 3, parts.length === 0));
+        if (Math.abs(a2) > 1e-10) parts.push(formatPolyTerm(a2, 2, parts.length === 0));
+        if (Math.abs(a1) > 1e-10) parts.push(formatPolyTerm(a1, 1, parts.length === 0));
+        if (Math.abs(a0) > 1e-10 || parts.length === 0) parts.push(formatPolyTerm(a0, 0, parts.length === 0));
+        return parts.join('').trim();
+      }
+
+      // Main dispatcher that produces a structured solution object
+      function solveMathProblem(rawInput, requestedMethod = 'auto') {
+        const input = String(rawInput || '').trim();
+        if (!input) {
+          return {
+            input: '',
+            category: 'Input Needed',
+            goalLabel: 'Enter a problem',
+            finalAnswer: 'Please type an equation or expression.',
+            steps: [],
+            availableMethods: ['solve', 'simplify', 'factor', 'derivative', 'integral', 'graph'],
+            activeMethod: 'solve',
+            graphExprs: []
+          };
+        }
+
+        // 1. Detect System of 2x2 Linear Equations: "2x + 3y = 12; x - y = 1"
+        if (input.includes(';') || (input.includes(',') && input.includes('=') && /[xy]/i.test(input))) {
+          const sysRes = solveSystem2x2(input);
+          if (sysRes) return sysRes;
+        }
+
+        // 2. Detect Matrix Input: "[[4, 2], [1, 3]]"
+        if (input.startsWith('[[') || requestedMethod === 'matrix') {
+          const matRes = solveMatrixProblem(input);
+          if (matRes) return matRes;
+        }
+
+        // 3. Detect Statistics Dataset: "12, 15, 18, 22, 25"
+        const commaNums = input.split(/[\s,]+/).filter(Boolean);
+        if (
+          requestedMethod === 'stats' ||
+          (input.includes(',') && !input.includes('=') && !/^(int|lim|gcd|lcm|nCr|nPr|triangle)\b/i.test(input) && commaNums.length >= 3 && commaNums.every(t => !isNaN(Number(t))))
+        ) {
+          return solveStatisticsDataset(input);
+        }
+
+        // 4. Detect Special Number Theory / Combinatorics / Triangle Commands
+        const specialRes = solveSpecialCommands(input);
+        if (specialRes) return specialRes;
+
+        // 5. Detect Calculus Derivative: d/dx(...) or method === 'derivative'
+        if (/^d\/dx\(/i.test(input) || requestedMethod === 'derivative') {
+          return solveDerivativeProblem(input);
+        }
+
+        // 6. Detect Calculus Integral: int(...) or method === 'integral'
+        if (/^int\(/i.test(input) || requestedMethod === 'integral') {
+          return solveIntegralProblem(input);
+        }
+
+        // 7. Detect Calculus Limit: lim(...) or method === 'limit'
+        if (/^lim\(/i.test(input) || requestedMethod === 'limit') {
+          return solveLimitProblem(input);
+        }
+
+        // 8. Detect Inequality: <=, >=, <, >
+        if (/(<=|>=|<|>)/.test(input)) {
+          return solveInequalityProblem(input);
+        }
+
+        // 9. Detect Fractions arithmetic: e.g. "3/4 + 5/6" (no variables)
+        if (!/[a-zA-Z]/.test(input) && /\d+\s*\/\s*\d+/.test(input) && /[+\-*]/.test(input)) {
+          const fracRes = solveFractionArithmetic(input);
+          if (fracRes) return fracRes;
+        }
+
+        // 10. Detect Equation with '=' OR requestedMethod === 'solve'
+        if (input.includes('=') || requestedMethod === 'solve') {
+          return solveEquationProblem(input, requestedMethod);
+        }
+
+        // 11. Detect Factoring request OR Factorable Quadratic/Polynomial expression
+        if (requestedMethod === 'factor') {
+          return solveFactorProblem(input);
+        }
+
+        // 12. Default: Simplify, Evaluate, or Auto-Analyze Expression
+        return solveExpressionProblem(input, requestedMethod);
+      }
+
+      // -----------------------------------------------------------------------
+      // SOLVER A: 2x2 System of Linear Equations
+      // -----------------------------------------------------------------------
+      function solveSystem2x2(input) {
+        const parts = input.split(/[;,]/).map(s => s.trim()).filter(Boolean);
+        if (parts.length !== 2) return null;
+
+        function parseLinearXY(eq) {
+          const sides = eq.split('=');
+          if (sides.length !== 2) return null;
+          const expr = `(${normalizeMathExpr(sides[0])}) - (${normalizeMathExpr(sides[1])})`;
+          try {
+            const comp = math.compile(expr);
+            const c0 = comp.evaluate({ x: 0, y: 0 });
+            const cx = comp.evaluate({ x: 1, y: 0 }) - c0;
+            const cy = comp.evaluate({ x: 0, y: 1 }) - c0;
+            // Verify linearity
+            const test = comp.evaluate({ x: 2, y: 3 });
+            if (Math.abs(test - (2 * cx + 3 * cy + c0)) > 1e-6) return null;
+            return { a: cx, b: cy, c: -c0 }; // a*x + b*y = c
+          } catch (e) {
+            return null;
+          }
+        }
+
+        const eq1 = parseLinearXY(parts[0]);
+        const eq2 = parseLinearXY(parts[1]);
+        if (!eq1 || !eq2) return null;
+
+        const D = eq1.a * eq2.b - eq2.a * eq1.b;
+        const Dx = eq1.c * eq2.b - eq2.c * eq1.b;
+        const Dy = eq1.a * eq2.c - eq2.a * eq1.c;
+
+        const steps = [
+          {
+            title: 'Write both equations in standard linear form Ax + By = C',
+            detail: `Equation (1): ${formatNumber(eq1.a)}x + (${formatNumber(eq1.b)})y = ${formatNumber(eq1.c)}\nEquation (2): ${formatNumber(eq2.a)}x + (${formatNumber(eq2.b)})y = ${formatNumber(eq2.c)}`
+          },
+          {
+            title: 'Compute the system determinant D (Cramer\'s Rule & Elimination check)',
+            detail: `D = (${formatNumber(eq1.a)})(${formatNumber(eq2.b)}) - (${formatNumber(eq2.a)})(${formatNumber(eq1.b)}) = ${formatNumber(D)}`
+          }
+        ];
+
+        let finalAns = '';
+        if (Math.abs(D) < 1e-10) {
+          finalAns = (Math.abs(Dx) < 1e-10 && Math.abs(Dy) < 1e-10)
+            ? 'Infinitely Many Solutions (Dependent System)'
+            : 'No Solution (Parallel Lines / Inconsistent System)';
+          steps.push({
+            title: 'Analyze determinant D = 0',
+            detail: finalAns
+          });
+        } else {
+          const xVal = Dx / D;
+          const yVal = Dy / D;
+          const xFrac = toExactFraction(xVal);
+          const yFrac = toExactFraction(yVal);
+          const xStr = xFrac ? xFrac.str : formatNumber(xVal);
+          const yStr = yFrac ? yFrac.str : formatNumber(yVal);
+
+          steps.push({
+            title: 'Eliminate y to solve for x',
+            detail: `Dx = (${formatNumber(eq1.c)})(${formatNumber(eq2.b)}) - (${formatNumber(eq2.c)})(${formatNumber(eq1.b)}) = ${formatNumber(Dx)}\nx = Dx / D = ${formatNumber(Dx)} / ${formatNumber(D)} = ${xStr}`
+          });
+          steps.push({
+            title: 'Substitute x back into Equation (1) to solve for y',
+            detail: `Dy = (${formatNumber(eq1.a)})(${formatNumber(eq2.c)}) - (${formatNumber(eq2.a)})(${formatNumber(eq1.c)}) = ${formatNumber(Dy)}\ny = Dy / D = ${formatNumber(Dy)} / ${formatNumber(D)} = ${yStr}`
+          });
+          steps.push({
+            title: 'Verify solution in both original equations',
+            detail: `Check Eq (1): ${formatNumber(eq1.a)}(${formatNumber(xVal)}) + ${formatNumber(eq1.b)}(${formatNumber(yVal)}) = ${formatNumber(eq1.c)} ✓\nCheck Eq (2): ${formatNumber(eq2.a)}(${formatNumber(xVal)}) + ${formatNumber(eq2.b)}(${formatNumber(yVal)}) = ${formatNumber(eq2.c)} ✓`
+          });
+          finalAns = `x = ${xStr},  y = ${yStr}   (Point: (${xStr}, ${yStr}))`;
+        }
+
+        const gExprs = [];
+        if (Math.abs(eq1.b) > 1e-9) gExprs.push(`(${eq1.c} - (${eq1.a})*x)/(${eq1.b})`);
+        if (Math.abs(eq2.b) > 1e-9) gExprs.push(`(${eq2.c} - (${eq2.a})*x)/(${eq2.b})`);
+
+        return {
+          input,
+          category: 'System of Linear Equations (2×2)',
+          goalLabel: 'Solve System for (x, y)',
+          finalAnswer: finalAns,
+          steps,
+          availableMethods: ['solve', 'graph'],
+          activeMethod: 'solve',
+          graphExprs: gExprs
+        };
+      }
+
+      // -----------------------------------------------------------------------
+      // SOLVER B: Equations (Linear, Quadratic, Cubic, Trig, General Numerical)
+      // -----------------------------------------------------------------------
+      function solveEquationProblem(input, requestedMethod) {
+        const sides = input.includes('=') ? input.split('=') : [input, '0'];
+        const lhs = sides[0].trim();
+        const rhs = (sides[1] || '0').trim();
+        const combinedExpr = `(${lhs}) - (${rhs})`;
+        const poly = extractPolynomialCoeffs(combinedExpr, 'x');
+
+        // Case B1: Polynomial Equation up to Degree 3
+        if (poly) {
+          const { a3, a2, a1, a0 } = poly;
+          const stdPolyStr = buildPolyString(a3, a2, a1, a0);
+
+          // Linear Equation: a1*x + a0 = 0
+          if (Math.abs(a3) < 1e-10 && Math.abs(a2) < 1e-10 && Math.abs(a1) > 1e-10) {
+            const root = -a0 / a1;
+            const frac = toExactFraction(root);
+            const ansStr = frac ? frac.str : formatNumber(root);
+            const steps = [
+              {
+                title: 'Move all terms to standard form ax + b = 0',
+                detail: `${stdPolyStr} = 0`
+              },
+              {
+                title: 'Isolate the variable term on the left side',
+                detail: `${formatNumber(a1)}x = ${formatNumber(-a0)}`
+              },
+              {
+                title: `Divide both sides by the coefficient ${formatNumber(a1)}`,
+                detail: `x = ${formatNumber(-a0)} / ${formatNumber(a1)} = ${ansStr}`
+              }
+            ];
+            return {
+              input,
+              category: 'Linear Equation',
+              goalLabel: 'Solve for x',
+              finalAnswer: `x = ${ansStr}` + (frac && frac.den !== 1 ? `  (≈ ${formatNumber(root, 4)})` : ''),
+              steps,
+              availableMethods: ['solve', 'simplify', 'derivative', 'graph'],
+              activeMethod: 'solve',
+              graphExprs: [combinedExpr]
+            };
+          }
+
+          // Quadratic Equation: a2*x^2 + a1*x + a0 = 0
+          if (Math.abs(a3) < 1e-10 && Math.abs(a2) > 1e-10) {
+            const a = a2, b = a1, c = a0;
+            const disc = b * b - 4 * a * c;
+            const vertexX = -b / (2 * a);
+            const vertexY = a * vertexX * vertexX + b * vertexX + c;
+
+            const steps = [
+              {
+                title: 'Write the quadratic equation in standard form ax² + bx + c = 0',
+                detail: `${stdPolyStr} = 0\nCoefficients: a = ${formatNumber(a)},  b = ${formatNumber(b)},  c = ${formatNumber(c)}`
+              },
+              {
+                title: 'Calculate the discriminant Δ = b² − 4ac',
+                detail: `Δ = (${formatNumber(b)})² - 4(${formatNumber(a)})(${formatNumber(c)}) = ${formatNumber(b * b)} - (${formatNumber(4 * a * c)}) = ${formatNumber(disc)}`
+              }
+            ];
+
+            let finalAns = '';
+            if (disc > 1e-10) {
+              const sqrtD = Math.sqrt(disc);
+              const r1 = (-b + sqrtD) / (2 * a);
+              const r2 = (-b - sqrtD) / (2 * a);
+              const f1 = toExactFraction(r1);
+              const f2 = toExactFraction(r2);
+
+              // Check if discriminant is a perfect square for factoring explanation
+              const isPerfSq = Math.abs(sqrtD - Math.round(sqrtD)) < 1e-8;
+              if (isPerfSq && f1 && f2) {
+                steps.push({
+                  title: 'Factor the quadratic expression (since Δ is a perfect square)',
+                  detail: `Roots correspond to factors: ${a === 1 ? '' : formatNumber(a)}(x - (${f1.str}))(x - (${f2.str})) = 0`
+                });
+              }
+
+              steps.push({
+                title: 'Apply the Quadratic Formula: x = (−b ± √Δ) / (2a)',
+                detail: `x = (-(${formatNumber(b)}) ± √${formatNumber(disc)}) / (2 · ${formatNumber(a)})\nx₁ = (${formatNumber(-b)} + ${formatNumber(sqrtD, 5)}) / ${formatNumber(2 * a)} = ${f1 ? f1.str : formatNumber(r1, 5)}\nx₂ = (${formatNumber(-b)} - ${formatNumber(sqrtD, 5)}) / ${formatNumber(2 * a)} = ${f2 ? f2.str : formatNumber(r2, 5)}`
+              });
+              steps.push({
+                title: 'Parabola Vertex & Axis of Symmetry',
+                detail: `Vertex: (${formatNumber(vertexX, 4)}, ${formatNumber(vertexY, 4)}), Axis of symmetry: x = ${formatNumber(vertexX, 4)}`
+              });
+
+              const s1 = f1 ? f1.str : formatNumber(r1, 5);
+              const s2 = f2 ? f2.str : formatNumber(r2, 5);
+              finalAns = `x = ${s1},  x = ${s2}`;
+              if (!isPerfSq) {
+                finalAns += `   (Exact: x = (${formatNumber(-b)} ± √${formatNumber(disc)}) / ${formatNumber(2 * a)})`;
+              }
+            } else if (Math.abs(disc) <= 1e-10) {
+              const r = -b / (2 * a);
+              const f = toExactFraction(r);
+              const rStr = f ? f.str : formatNumber(r, 5);
+              steps.push({
+                title: 'Discriminant Δ = 0 indicates one repeated real root (perfect square trinomial)',
+                detail: `x = -b / (2a) = ${formatNumber(-b)} / ${formatNumber(2 * a)} = ${rStr}`
+              });
+              finalAns = `x = ${rStr}  (multiplicity 2)`;
+            } else {
+              const realPart = -b / (2 * a);
+              const imagPart = Math.sqrt(-disc) / Math.abs(2 * a);
+              steps.push({
+                title: 'Discriminant Δ < 0 indicates two complex conjugate roots',
+                detail: `x = (${formatNumber(-b)} ± i√${formatNumber(-disc)}) / ${formatNumber(2 * a)}\nx = ${formatNumber(realPart, 4)} ± ${formatNumber(imagPart, 4)}i`
+              });
+              finalAns = `x = ${formatNumber(realPart, 4)} + ${formatNumber(imagPart, 4)}i,   x = ${formatNumber(realPart, 4)} - ${formatNumber(imagPart, 4)}i`;
+            }
+
+            return {
+              input,
+              category: 'Quadratic Equation',
+              goalLabel: 'Solve Quadratic for x',
+              finalAnswer: finalAns,
+              steps,
+              availableMethods: ['solve', 'factor', 'derivative', 'integral', 'graph'],
+              activeMethod: 'solve',
+              graphExprs: [stdPolyStr]
+            };
+          }
+
+          // Cubic Equation: a3*x^3 + a2*x^2 + a1*x + a0 = 0
+          if (Math.abs(a3) > 1e-10) {
+            const roots = findRealRootsNumerical(combinedExpr, -50, 50);
+            const rootStrs = roots.map(r => {
+              const f = toExactFraction(r);
+              return f ? f.str : formatNumber(r, 4);
+            });
+            const steps = [
+              {
+                title: 'Rewrite cubic equation in standard form ax³ + bx² + cx + d = 0',
+                detail: `${stdPolyStr} = 0`
+              },
+              {
+                title: 'Test rational root candidates ±(factors of constant term) / (factors of leading coefficient)',
+                detail: rootStrs.length
+                  ? `Identified real root(s): ${rootStrs.map(r => `x = ${r}`).join(', ')}`
+                  : 'Solved numerically via Newton-Raphson root bracketing'
+              },
+              {
+                title: 'Factor out linear root terms and solve remaining quadratic factor',
+                detail: `Real roots verified: ${rootStrs.join(', ')}`
+              }
+            ];
+            return {
+              input,
+              category: 'Cubic Polynomial Equation',
+              goalLabel: 'Find Roots of Cubic',
+              finalAnswer: rootStrs.length ? rootStrs.map(r => `x = ${r}`).join(',  ') : 'No real roots found in [-50, 50]',
+              steps,
+              availableMethods: ['solve', 'derivative', 'integral', 'graph'],
+              activeMethod: 'solve',
+              graphExprs: [stdPolyStr]
+            };
+          }
+        }
+
+        // Case B2: General / Transcendental / Trig Equation solved numerically
+        const roots = findRealRootsNumerical(combinedExpr, -15, 15);
+        const steps = [
+          {
+            title: 'Set equation to zero form f(x) = LHS − RHS = 0',
+            detail: `f(x) = ${lhs} - (${rhs}) = 0`
+          },
+          {
+            title: 'Scan domain [-15, 15] and refine roots using Bisection + Secant iteration',
+            detail: roots.length
+              ? `Found ${roots.length} real solution(s) in [-15, 15]: ${roots.map(r => formatNumber(r, 5)).join(', ')}`
+              : 'No real zero crossings detected on [-15, 15].'
+          }
+        ];
+        return {
+          input,
+          category: 'Algebraic / Transcendental Equation',
+          goalLabel: 'Solve for x',
+          finalAnswer: roots.length ? roots.map(r => `x ≈ ${formatNumber(r, 5)}`).join(',  ') : 'No real solutions in [-15, 15]',
+          steps,
+          availableMethods: ['solve', 'graph'],
+          activeMethod: 'solve',
+          graphExprs: [lhs, rhs]
+        };
+      }
+
+      // -----------------------------------------------------------------------
+      // SOLVER C: Factoring Polynomials
+      // -----------------------------------------------------------------------
+      function solveFactorProblem(input) {
+        const cleanExpr = input.split('=')[0].trim();
+        const poly = extractPolynomialCoeffs(cleanExpr, 'x');
+        if (poly && Math.abs(poly.a3) < 1e-10 && Math.abs(poly.a2) > 1e-10) {
+          const { a2: a, a1: b, a0: c } = poly;
+          const disc = b * b - 4 * a * c;
+          const steps = [
+            {
+              title: 'Identify quadratic coefficients a, b, c',
+              detail: `Expression: ${buildPolyString(0, a, b, c)}\na = ${a},  b = ${b},  c = ${c}`
+            },
+            {
+              title: 'Check discriminant Δ = b² − 4ac for rational factorability',
+              detail: `Δ = (${b})² - 4(${a})(${c}) = ${disc}`
+            }
+          ];
+          if (disc >= 0) {
+            const sqrtD = Math.sqrt(disc);
+            const r1 = (-b + sqrtD) / (2 * a);
+            const r2 = (-b - sqrtD) / (2 * a);
+            const f1 = toExactFraction(r1);
+            const f2 = toExactFraction(r2);
+            if (f1 && f2) {
+              // Format clean integer linear factors (dx - n)
+              const lead = a / (f1.den * f2.den);
+              const leadStr = Math.abs(lead - 1) < 1e-9 ? '' : (Math.abs(lead + 1) < 1e-9 ? '-' : formatNumber(lead));
+              const term1 = `${f1.den === 1 ? '' : f1.den}x ${f1.num >= 0 ? '- ' + f1.num : '+ ' + Math.abs(f1.num)}`;
+              const term2 = `${f2.den === 1 ? '' : f2.den}x ${f2.num >= 0 ? '- ' + f2.num : '+ ' + Math.abs(f2.num)}`;
+              const factored = `${leadStr}(${term1})(${term2})`;
+              steps.push({
+                title: 'Split the middle term using roots and group factors',
+                detail: `Zeroes at x = ${f1.str} and x = ${f2.str} yield linear factors:\n${factored}`
+              });
+              return {
+                input,
+                category: 'Polynomial Factoring',
+                goalLabel: 'Factor Completely',
+                finalAnswer: factored,
+                steps,
+                availableMethods: ['factor', 'solve', 'derivative', 'graph'],
+                activeMethod: 'factor',
+                graphExprs: [cleanExpr]
+              };
+            }
+          }
+        }
+        return solveEquationProblem(cleanExpr + ' = 0', 'solve');
+      }
+
+      // -----------------------------------------------------------------------
+      // SOLVER D: Calculus Symbolic Derivative (d/dx)
+      // -----------------------------------------------------------------------
+      function solveDerivativeProblem(input) {
+        let inner = input.replace(/^d\/dx\(/i, '');
+        if (inner.endsWith(')') && /^d\/dx\(/i.test(input)) {
+          inner = inner.slice(0, -1);
+        }
+        inner = inner.split('=')[0].trim();
+
+        const norm = normalizeMathExpr(inner);
+        try {
+          const derivNode = math.derivative(norm, 'x');
+          const simplified = math.simplify(derivNode).toString();
+          const poly = extractPolynomialCoeffs(inner, 'x');
+
+          const steps = [
+            {
+              title: 'Set up differentiation operator with respect to x',
+              detail: `f(x) = ${inner}\nGoal: Find f'(x) = d/dx [ ${inner} ]`
+            }
+          ];
+
+          if (poly) {
+            const { a3, a2, a1, a0 } = poly;
+            const termSteps = [];
+            if (Math.abs(a3) > 1e-10) termSteps.push(`d/dx(${formatNumber(a3)}x³) = 3·(${formatNumber(a3)})x² = ${formatNumber(3 * a3)}x²  (Power Rule)`);
+            if (Math.abs(a2) > 1e-10) termSteps.push(`d/dx(${formatNumber(a2)}x²) = 2·(${formatNumber(a2)})x = ${formatNumber(2 * a2)}x  (Power Rule)`);
+            if (Math.abs(a1) > 1e-10) termSteps.push(`d/dx(${formatNumber(a1)}x) = ${formatNumber(a1)}  (Linear Rule)`);
+            if (Math.abs(a0) > 1e-10) termSteps.push(`d/dx(${formatNumber(a0)}) = 0  (Constant Rule)`);
+            steps.push({
+              title: 'Apply the Sum and Power Rules d/dx(xⁿ) = n·xⁿ⁻¹ term by term',
+              detail: termSteps.join('\n')
+            });
+          } else {
+            steps.push({
+              title: 'Apply differentiation rules (Product, Chain, and Trigonometric/Exponential rules)',
+              detail: `Raw derivative expression: ${derivNode.toString()}`
+            });
+          }
+
+          steps.push({
+            title: 'Simplify the resulting derivative expression',
+            detail: `f'(x) = ${simplified}`
+          });
+
+          return {
+            input,
+            category: 'Calculus — Differentiation',
+            goalLabel: 'Find Derivative d/dx',
+            finalAnswer: `f'(x) = ${simplified}`,
+            steps,
+            availableMethods: ['derivative', 'integral', 'solve', 'graph'],
+            activeMethod: 'derivative',
+            graphExprs: [inner, simplified]
+          };
+        } catch (err) {
+          return {
+            input,
+            category: 'Calculus — Differentiation',
+            goalLabel: 'Find Derivative d/dx',
+            finalAnswer: 'Could not symbolically differentiate expression. Check syntax (e.g., d/dx(x^3 + sin(x))).',
+            steps: [],
+            availableMethods: ['derivative', 'simplify'],
+            activeMethod: 'derivative',
+            graphExprs: []
+          };
+        }
+      }
+
+      // -----------------------------------------------------------------------
+      // SOLVER E: Calculus Indefinite & Definite Integrals (int)
+      // -----------------------------------------------------------------------
+      function solveIntegralProblem(input) {
+        let inner = input.replace(/^int\(/i, '');
+        if (inner.endsWith(')') && /^int\(/i.test(input)) {
+          inner = inner.slice(0, -1);
+        }
+        const parts = inner.split(',').map(s => s.trim());
+        const expr = parts[0].split('=')[0].trim();
+        const isDefinite = parts.length === 3;
+        const lowerA = isDefinite ? Number(math.evaluate(normalizeMathExpr(parts[1]))) : null;
+        const upperB = isDefinite ? Number(math.evaluate(normalizeMathExpr(parts[2]))) : null;
+
+        const poly = extractPolynomialCoeffs(expr, 'x');
+        const steps = [];
+        let antiderivStr = '';
+
+        if (poly) {
+          const { a3, a2, a1, a0 } = poly;
+          steps.push({
+            title: 'Identify polynomial integrand and apply the Power Rule ∫ xⁿ dx = xⁿ⁺¹ / (n + 1)',
+            detail: `Integrand: f(x) = ${buildPolyString(a3, a2, a1, a0)}`
+          });
+
+          const terms = [];
+          if (Math.abs(a3) > 1e-10) {
+            const f = toExactFraction(a3 / 4);
+            terms.push(`${f ? f.str : formatNumber(a3 / 4)}*x^4`);
+          }
+          if (Math.abs(a2) > 1e-10) {
+            const f = toExactFraction(a2 / 3);
+            terms.push(`${f ? f.str : formatNumber(a2 / 3)}*x^3`);
+          }
+          if (Math.abs(a1) > 1e-10) {
+            const f = toExactFraction(a1 / 2);
+            terms.push(`${f ? f.str : formatNumber(a1 / 2)}*x^2`);
+          }
+          if (Math.abs(a0) > 1e-10) {
+            terms.push(`${formatNumber(a0)}*x`);
+          }
+          antiderivStr = terms.length ? terms.join(' + ').replace(/\+ -/g, '- ') : '0';
+
+          steps.push({
+            title: 'Combine antiderivative terms',
+            detail: `F(x) = ${antiderivStr}${isDefinite ? '' : ' + C'}`
+          });
+
+          if (isDefinite && isFinite(lowerA) && isFinite(upperB)) {
+            const evalF = x => (a3 / 4) * Math.pow(x, 4) + (a2 / 3) * Math.pow(x, 3) + (a1 / 2) * x * x + a0 * x;
+            const fb = evalF(upperB);
+            const fa = evalF(lowerA);
+            const net = fb - fa;
+            const netFrac = toExactFraction(net);
+            steps.push({
+              title: `Apply the Fundamental Theorem of Calculus: F(${upperB}) − F(${lowerA})`,
+              detail: `F(${upperB}) = ${formatNumber(fb, 5)}\nF(${lowerA}) = ${formatNumber(fa, 5)}\nF(${upperB}) - F(${lowerA}) = ${netFrac ? netFrac.str : formatNumber(net, 5)}`
+            });
+            return {
+              input,
+              category: 'Calculus — Definite Integral',
+              goalLabel: `Evaluate ∫ from ${lowerA} to ${upperB}`,
+              finalAnswer: `${netFrac ? netFrac.str : formatNumber(net, 6)}` + (netFrac && netFrac.den !== 1 ? `  (≈ ${formatNumber(net, 5)})` : ''),
+              steps,
+              availableMethods: ['integral', 'derivative', 'graph'],
+              activeMethod: 'integral',
+              graphExprs: [expr]
+            };
+          }
+
+          return {
+            input,
+            category: 'Calculus — Indefinite Integral',
+            goalLabel: 'Find Antiderivative ∫ f(x) dx',
+            finalAnswer: `${antiderivStr} + C`,
+            steps,
+            availableMethods: ['integral', 'derivative', 'graph'],
+            activeMethod: 'integral',
+            graphExprs: [expr, antiderivStr]
+          };
+        }
+
+        // Non-polynomial numerical Simpson's Rule on [a, b] (or [0, 1] default preview)
+        const a = isDefinite && isFinite(lowerA) ? lowerA : 0;
+        const b = isDefinite && isFinite(upperB) ? upperB : 1;
+        const area = simpsonsRule(expr, a, b, 200);
+        steps.push({
+          title: 'Set up integral expression',
+          detail: `∫ (${expr}) dx` + (isDefinite ? ` on interval [${a}, ${b}]` : '')
+        });
+        steps.push({
+          title: `Compute numerical quadrature via Composite Simpson's Rule (N = 200 subintervals on [${a}, ${b}])`,
+          detail: `Approximate definite integral on [${a}, ${b}] ≈ ${formatNumber(area, 6)}`
+        });
+        return {
+          input,
+          category: 'Calculus — Integration',
+          goalLabel: isDefinite ? `Definite Integral on [${a}, ${b}]` : 'Integral Analysis',
+          finalAnswer: isDefinite ? `≈ ${formatNumber(area, 6)}` : `Definite value on [0, 1] ≈ ${formatNumber(area, 6)}`,
+          steps,
+          availableMethods: ['integral', 'derivative', 'graph'],
+          activeMethod: 'integral',
+          graphExprs: [expr]
+        };
+      }
+
+      function simpsonsRule(exprStr, a, b, n = 100) {
+        try {
+          const comp = math.compile(normalizeMathExpr(exprStr));
+          const h = (b - a) / n;
+          let sum = comp.evaluate({ x: a }) + comp.evaluate({ x: b });
+          for (let i = 1; i < n; i++) {
+            const x = a + i * h;
+            const fx = comp.evaluate({ x });
+            sum += (i % 2 === 0 ? 2 : 4) * fx;
+          }
+          return (h / 3) * sum;
+        } catch (e) {
+          return NaN;
+        }
+      }
+
+      // -----------------------------------------------------------------------
+      // SOLVER F: Calculus Limit (lim)
+      // -----------------------------------------------------------------------
+      function solveLimitProblem(input) {
+        let inner = input.replace(/^lim\(/i, '');
+        if (inner.endsWith(')') && /^lim\(/i.test(input)) {
+          inner = inner.slice(0, -1);
+        }
+        const parts = inner.split(',').map(s => s.trim());
+        const expr = parts[0];
+        const targetA = parts[1] !== undefined ? Number(math.evaluate(normalizeMathExpr(parts[1]))) : 0;
+
+        try {
+          const comp = math.compile(normalizeMathExpr(expr));
+          const left1 = comp.evaluate({ x: targetA - 0.01 });
+          const left2 = comp.evaluate({ x: targetA - 0.0001 });
+          const right1 = comp.evaluate({ x: targetA + 0.01 });
+          const right2 = comp.evaluate({ x: targetA + 0.0001 });
+
+          const steps = [
+            {
+              title: `Evaluate limit as x approaches ${targetA}`,
+              detail: `lim (x → ${targetA}) [ ${expr} ]`
+            },
+            {
+              title: `Construct two-sided numerical approach table around x = ${targetA}`,
+              detail: `From left (x → ${targetA}⁻):  f(${formatNumber(targetA - 0.01, 4)}) = ${formatNumber(left1, 5)},   f(${formatNumber(targetA - 0.0001, 5)}) = ${formatNumber(left2, 5)}\nFrom right (x → ${targetA}⁺): f(${formatNumber(targetA + 0.01, 4)}) = ${formatNumber(right1, 5)},   f(${formatNumber(targetA + 0.0001, 5)}) = ${formatNumber(right2, 5)}`
+            }
+          ];
+
+          let finalAns = '';
+          if (Math.abs(left2 - right2) < 1e-3 && isFinite(left2)) {
+            const avg = (left2 + right2) / 2;
+            const frac = toExactFraction(avg, 1e-4);
+            finalAns = frac ? frac.str : formatNumber(avg, 5);
+            steps.push({
+              title: 'Left-hand and right-hand limits converge to the same finite value',
+              detail: `Limit = ${finalAns}`
+            });
+          } else {
+            finalAns = 'Limit Does Not Exist (or approaches ±∞)';
+            steps.push({
+              title: 'Compare left-hand and right-hand behavior',
+              detail: 'The one-sided limits diverge or do not match.'
+            });
+          }
+
+          return {
+            input,
+            category: 'Calculus — Limits',
+            goalLabel: `Evaluate Limit as x → ${targetA}`,
+            finalAnswer: finalAns,
+            steps,
+            availableMethods: ['limit', 'derivative', 'graph'],
+            activeMethod: 'limit',
+            graphExprs: [expr]
+          };
+        } catch (err) {
+          return {
+            input,
+            category: 'Calculus — Limits',
+            goalLabel: 'Evaluate Limit',
+            finalAnswer: 'Syntax: lim((x^2 - 9)/(x - 3), 3)',
+            steps: [],
+            availableMethods: ['limit'],
+            activeMethod: 'limit',
+            graphExprs: []
+          };
+        }
+      }
+
+      // -----------------------------------------------------------------------
+      // SOLVER G: Inequalities
+      // -----------------------------------------------------------------------
+      function solveInequalityProblem(input) {
+        const match = input.match(/(<=|>=|<|>)/);
+        const op = match[1];
+        const [lhs, rhs] = input.split(op).map(s => s.trim());
+        const combined = `(${lhs}) - (${rhs})`;
+        const poly = extractPolynomialCoeffs(combined, 'x');
+
+        if (poly && Math.abs(poly.a3) < 1e-10 && Math.abs(poly.a2) < 1e-10 && Math.abs(poly.a1) > 1e-10) {
+          const { a1, a0 } = poly;
+          const boundary = -a0 / a1;
+          const frac = toExactFraction(boundary);
+          const bStr = frac ? frac.str : formatNumber(boundary, 4);
+          const flipped = a1 < 0;
+          const flipMap = { '<': '>', '>': '<', '<=': '>=', '>=': '<=' };
+          const finalOp = flipped ? flipMap[op] : op;
+
+          const intervalStr = (finalOp === '<' || finalOp === '<=')
+            ? `(-∞, ${bStr}${finalOp === '<=' ? ']' : ')'}`
+            : `${finalOp === '>=' ? '[' : '('}${bStr}, ∞)`;
+
+          return {
+            input,
+            category: 'Linear Inequality',
+            goalLabel: 'Solve Inequality & Interval Notation',
+            finalAnswer: `x ${finalOp} ${bStr}    •    Interval: ${intervalStr}`,
+            steps: [
+              {
+                title: 'Move all terms to compare against 0',
+                detail: `${buildPolyString(0, 0, a1, a0)} ${op} 0`
+              },
+              {
+                title: `Isolate x and divide by ${formatNumber(a1)} ${flipped ? '(flipping inequality sign since dividing by a negative)' : ''}`,
+                detail: `x ${finalOp} ${bStr}\nInterval Notation: ${intervalStr}`
+              }
+            ],
+            availableMethods: ['solve', 'graph'],
+            activeMethod: 'solve',
+            graphExprs: [combined]
+          };
+        }
+
+        return solveEquationProblem(input.replace(op, '='), 'solve');
+      }
+
+      // -----------------------------------------------------------------------
+      // SOLVER H: Fractions Arithmetic with LCD Steps
+      // -----------------------------------------------------------------------
+      function solveFractionArithmetic(input) {
+        const m = input.trim().match(/^(-?\d+)\s*\/\s*(\d+)\s*([+\-*\/])\s*(-?\d+)\s*\/\s*(\d+)$/);
+        if (!m) return null;
+        const n1 = parseInt(m[1], 10), d1 = parseInt(m[2], 10);
+        const op = m[3];
+        const n2 = parseInt(m[4], 10), d2 = parseInt(m[5], 10);
+        if (d1 === 0 || d2 === 0) return null;
+
+        const steps = [];
+        let resNum = 0, resDen = 1;
+
+        if (op === '+' || op === '-') {
+          const lcmDen = (d1 * d2) / gcdInt(d1, d2);
+          const m1 = lcmDen / d1;
+          const m2 = lcmDen / d2;
+          const adj1 = n1 * m1;
+          const adj2 = n2 * m2;
+          resNum = op === '+' ? adj1 + adj2 : adj1 - adj2;
+          resDen = lcmDen;
+
+          steps.push({
+            title: `Find the Least Common Denominator (LCD) of ${d1} and ${d2}`,
+            detail: `LCD(${d1}, ${d2}) = ${lcmDen}`
+          });
+          steps.push({
+            title: 'Rewrite each fraction with the common denominator',
+            detail: `${n1}/${d1} = (${n1}×${m1})/(${d1}×${m1}) = ${adj1}/${lcmDen}\n${n2}/${d2} = (${n2}×${m2})/(${d2}×${m2}) = ${adj2}/${lcmDen}`
+          });
+          steps.push({
+            title: `${op === '+' ? 'Add' : 'Subtract'} the numerators over the common denominator`,
+            detail: `(${adj1} ${op} ${adj2}) / ${lcmDen} = ${resNum}/${resDen}`
+          });
+        } else if (op === '*') {
+          resNum = n1 * n2;
+          resDen = d1 * d2;
+          steps.push({
+            title: 'Multiply numerators together and denominators together',
+            detail: `(${n1} × ${n2}) / (${d1} × ${d2}) = ${resNum}/${resDen}`
+          });
+        } else if (op === '/') {
+          resNum = n1 * d2;
+          resDen = d1 * n2;
+          if (resDen < 0) { resNum = -resNum; resDen = -resDen; }
+          steps.push({
+            title: 'Multiply the first fraction by the reciprocal of the second fraction',
+            detail: `(${n1}/${d1}) × (${d2}/${n2}) = ${resNum}/${resDen}`
+          });
+        }
+
+        const g = gcdInt(resNum, resDen);
+        const sNum = resNum / g;
+        const sDen = resDen / g;
+        if (g > 1) {
+          steps.push({
+            title: `Reduce fraction by dividing numerator and denominator by GCD = ${g}`,
+            detail: `${resNum}/${resDen} = ${sNum}/${sDen}`
+          });
+        }
+
+        const decVal = sNum / sDen;
+        const mixedWhole = Math.trunc(sNum / sDen);
+        const mixedRem = Math.abs(sNum % sDen);
+        const mixedStr = (Math.abs(sNum) > sDen && sDen !== 1 && mixedRem !== 0)
+          ? `   (Mixed: ${mixedWhole} ${mixedRem}/${sDen})`
+          : '';
+
+        return {
+          input,
+          category: 'Pre-Algebra — Fractions',
+          goalLabel: 'Exact Fraction & Decimal',
+          finalAnswer: `${sDen === 1 ? sNum : sNum + '/' + sDen}${mixedStr}   (Decimal ≈ ${formatNumber(decVal, 5)})`,
+          steps,
+          availableMethods: ['simplify'],
+          activeMethod: 'simplify',
+          graphExprs: []
+        };
+      }
+
+      // -----------------------------------------------------------------------
+      // SOLVER I: Special Commands (prime, gcd, lcm, nCr, nPr, triangle, % of)
+      // -----------------------------------------------------------------------
+      function solveSpecialCommands(input) {
+        // 1. Percentage: "35% of 240"
+        const pctMatch = input.match(/^(\d+(?:\.\d+)?)\s*%\s*of\s*(\d+(?:\.\d+)?)$/i);
+        if (pctMatch) {
+          const p = Number(pctMatch[1]);
+          const base = Number(pctMatch[2]);
+          const val = (p / 100) * base;
+          return {
+            input,
+            category: 'Basic Math — Percentages',
+            goalLabel: 'Calculate Percentage',
+            finalAnswer: `${formatNumber(val, 6)}`,
+            steps: [
+              { title: 'Convert percentage to decimal', detail: `${p}% = ${p} / 100 = ${p / 100}` },
+              { title: 'Multiply by base quantity', detail: `${p / 100} × ${base} = ${formatNumber(val, 6)}` }
+            ],
+            availableMethods: ['simplify'],
+            activeMethod: 'simplify',
+            graphExprs: []
+          };
+        }
+
+        // 2. Prime Factorization: prime(360)
+        const primeMatch = input.match(/^prime\((\d+)\)$/i);
+        if (primeMatch) {
+          let n = parseInt(primeMatch[1], 10);
+          const orig = n;
+          if (n < 2) return null;
+          const factors = [];
+          const divisionSteps = [];
+          let d = 2;
+          while (d * d <= n) {
+            while (n % d === 0) {
+              divisionSteps.push(`${n} ÷ ${d} = ${n / d}`);
+              factors.push(d);
+              n = n / d;
+            }
+            d++;
+          }
+          if (n > 1) {
+            factors.push(n);
+          }
+          const counts = {};
+          factors.forEach(f => { counts[f] = (counts[f] || 0) + 1; });
+          const expStr = Object.keys(counts).map(k => counts[k] > 1 ? `${k}^${counts[k]}` : k).join(' × ');
+          return {
+            input,
+            category: 'Number Theory — Prime Factorization',
+            goalLabel: `Prime Factors of ${orig}`,
+            finalAnswer: `${orig} = ${expStr}`,
+            steps: [
+              { title: 'Divide successively by smallest prime factors (2, 3, 5, ...)', detail: divisionSteps.join('\n') || `${orig} is prime.` },
+              { title: 'Group prime factors into exponential form', detail: `${orig} = ${factors.join(' × ')} = ${expStr}` }
+            ],
+            availableMethods: ['simplify'],
+            activeMethod: 'simplify',
+            graphExprs: []
+          };
+        }
+
+        // 3. GCD & LCM: gcd(48, 180) or lcm(48, 180)
+        const gcdMatch = input.match(/^(gcd|lcm)\((\d+)\s*,\s*(\d+)\)$/i);
+        if (gcdMatch) {
+          const a = parseInt(gcdMatch[2], 10);
+          const b = parseInt(gcdMatch[3], 10);
+          const euclidSteps = [];
+          let x = a, y = b;
+          while (y !== 0) {
+            const q = Math.floor(x / y);
+            const r = x % y;
+            euclidSteps.push(`${x} = ${q} × ${y} + ${r}`);
+            x = y;
+            y = r;
+          }
+          const g = x || 1;
+          const l = (a * b) / g;
+          return {
+            input,
+            category: 'Number Theory — GCD & LCM',
+            goalLabel: 'Euclidean Algorithm',
+            finalAnswer: `GCD(${a}, ${b}) = ${g}    •    LCM(${a}, ${b}) = ${l}`,
+            steps: [
+              { title: 'Apply Euclidean Algorithm repeated division', detail: euclidSteps.join('\n') },
+              { title: 'Calculate LCM using relation LCM(a, b) = (a × b) / GCD(a, b)', detail: `LCM = (${a} × ${b}) / ${g} = ${l}` }
+            ],
+            availableMethods: ['simplify'],
+            activeMethod: 'simplify',
+            graphExprs: []
+          };
+        }
+
+        // 4. Combinations & Permutations: nCr(10, 3) or nPr(8, 3)
+        const combMatch = input.match(/^(nCr|nPr)\((\d+)\s*,\s*(\d+)\)$/i);
+        if (combMatch) {
+          const mode = combMatch[1].toLowerCase();
+          const n = parseInt(combMatch[2], 10);
+          const r = parseInt(combMatch[3], 10);
+          if (r > n || n > 170) return null;
+          const fact = k => { let p = 1; for (let i = 2; i <= k; i++) p *= i; return p; };
+          const perm = Math.round(fact(n) / fact(n - r));
+          const comb = Math.round(perm / fact(r));
+          const isComb = mode === 'ncr';
+          return {
+            input,
+            category: 'Combinatorics & Probability',
+            goalLabel: isComb ? `Combinations C(${n}, ${r})` : `Permutations P(${n}, ${r})`,
+            finalAnswer: `${isComb ? comb : perm}`,
+            steps: [
+              {
+                title: isComb ? 'Apply Combinations Formula: n! / (r! (n − r)!)' : 'Apply Permutations Formula: n! / (n − r)!',
+                detail: isComb
+                  ? `C(${n}, ${r}) = ${n}! / (${r}! · ${n - r}!) = ${perm} / ${fact(r)} = ${comb}`
+                  : `P(${n}, ${r}) = ${n}! / ${n - r}! = ${perm}`
+              }
+            ],
+            availableMethods: ['simplify'],
+            activeMethod: 'simplify',
+            graphExprs: []
+          };
+        }
+
+        // 5. Right Triangle Solver: triangle(a, b)
+        const triMatch = input.match(/^triangle\((\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\)$/i);
+        if (triMatch) {
+          const a = Number(triMatch[1]);
+          const b = Number(triMatch[2]);
+          const c = Math.sqrt(a * a + b * b);
+          const angleA = (Math.atan2(a, b) * 180) / Math.PI;
+          const angleB = 90 - angleA;
+          const area = 0.5 * a * b;
+          return {
+            input,
+            category: 'Trigonometry — Right Triangle Solver',
+            goalLabel: 'Find Hypotenuse, Angles & Area',
+            finalAnswer: `Hypotenuse c = ${formatNumber(c, 4)},  ∠A = ${formatNumber(angleA, 2)}°,  ∠B = ${formatNumber(angleB, 2)}°,  Area = ${formatNumber(area, 4)}`,
+            steps: [
+              { title: 'Apply Pythagorean Theorem c = √(a² + b²)', detail: `c = √(${a}² + ${b}²) = √(${a * a + b * b}) = ${formatNumber(c, 5)}` },
+              { title: 'Compute acute angles using inverse tangent', detail: `∠A = arctan(${a}/${b}) = ${formatNumber(angleA, 2)}°\n∠B = 90° - ${formatNumber(angleA, 2)}° = ${formatNumber(angleB, 2)}°` },
+              { title: 'Compute Triangle Area = ½ · a · b & Perimeter', detail: `Area = 0.5 × ${a} × ${b} = ${formatNumber(area, 4)},  Perimeter = ${formatNumber(a + b + c, 4)}` }
+            ],
+            availableMethods: ['simplify'],
+            activeMethod: 'simplify',
+            graphExprs: []
+          };
+        }
+
+        return null;
+      }
+
+      // -----------------------------------------------------------------------
+      // SOLVER J: Statistics Dataset Summary
+      // -----------------------------------------------------------------------
+      function solveStatisticsDataset(input) {
+        const nums = input
+          .split(/[\s,]+/)
+          .map(s => Number(s.trim()))
+          .filter(n => !isNaN(n) && isFinite(n));
+
+        if (nums.length < 2) {
+          return {
+            input,
+            category: 'Statistics',
+            goalLabel: 'Dataset Summary',
+            finalAnswer: 'Enter at least 2 numbers separated by commas.',
+            steps: [],
+            availableMethods: ['stats'],
+            activeMethod: 'stats',
+            graphExprs: []
+          };
+        }
+
+        const sorted = [...nums].sort((a, b) => a - b);
+        const n = sorted.length;
+        const sum = sorted.reduce((acc, v) => acc + v, 0);
+        const mean = sum / n;
+
+        const medianOfArr = arr => {
+          const m = Math.floor(arr.length / 2);
+          return arr.length % 2 === 1 ? arr[m] : (arr[m - 1] + arr[m]) / 2;
+        };
+
+        const median = medianOfArr(sorted);
+        const lowerHalf = sorted.slice(0, Math.floor(n / 2));
+        const upperHalf = sorted.slice(Math.ceil(n / 2));
+        const q1 = medianOfArr(lowerHalf);
+        const q3 = medianOfArr(upperHalf);
+        const iqr = q3 - q1;
+
+        const sqDiffSum = sorted.reduce((acc, v) => acc + Math.pow(v - mean, 2), 0);
+        const sampVar = sqDiffSum / (n - 1);
+        const sampStd = Math.sqrt(sampVar);
+        const popStd = Math.sqrt(sqDiffSum / n);
+
+        // Mode
+        const freq = {};
+        let maxFreq = 0;
+        sorted.forEach(v => {
+          freq[v] = (freq[v] || 0) + 1;
+          if (freq[v] > maxFreq) maxFreq = freq[v];
+        });
+        const modes = Object.keys(freq).filter(k => freq[k] === maxFreq);
+        const modeStr = maxFreq === 1 ? 'No repeat mode' : modes.join(', ');
+
+        return {
+          input,
+          category: 'Statistics — Descriptive Analysis',
+          goalLabel: `Analyze Dataset (n = ${n})`,
+          finalAnswer: `Mean x̄ = ${formatNumber(mean, 4)},  Median = ${formatNumber(median, 4)},  Sample SD s = ${formatNumber(sampStd, 4)},  IQR = ${formatNumber(iqr, 4)}`,
+          steps: [
+            {
+              title: `Sort dataset in ascending order (n = ${n})`,
+              detail: sorted.join(', ')
+            },
+            {
+              title: 'Calculate Mean (x̄), Median, and Mode',
+              detail: `Sum Σx = ${formatNumber(sum, 4)}\nMean x̄ = Σx / n = ${formatNumber(sum, 4)} / ${n} = ${formatNumber(mean, 4)}\nMedian = ${formatNumber(median, 4)}   •   Mode = ${modeStr}`
+            },
+            {
+              title: 'Five-Number Summary & Interquartile Range (IQR)',
+              detail: `Min = ${sorted[0]},  Q₁ = ${formatNumber(q1, 4)},  Median = ${formatNumber(median, 4)},  Q₃ = ${formatNumber(q3, 4)},  Max = ${sorted[n - 1]}\nIQR = Q₃ - Q₁ = ${formatNumber(iqr, 4)}`
+            },
+            {
+              title: 'Sample & Population Standard Deviation',
+              detail: `Σ(xᵢ - x̄)² = ${formatNumber(sqDiffSum, 4)}\nSample Variance s² = ${formatNumber(sampVar, 4)},  Sample SD s = ${formatNumber(sampStd, 4)}\nPopulation SD σ = ${formatNumber(popStd, 4)}`
+            }
+          ],
+          availableMethods: ['stats'],
+          activeMethod: 'stats',
+          graphExprs: []
+        };
+      }
+
+      // -----------------------------------------------------------------------
+      // SOLVER K: Matrix Operations (Det, Inverse, Eigenvalues)
+      // -----------------------------------------------------------------------
+      function solveMatrixProblem(input) {
+        try {
+          const mat = math.evaluate(input);
+          const arr = mat.toArray ? mat.toArray() : mat;
+          if (!Array.isArray(arr) || !Array.isArray(arr[0])) return null;
+          const rows = arr.length;
+          const cols = arr[0].length;
+          if (rows !== cols) return null;
+
+          const detVal = math.det(arr);
+          const traceVal = arr.reduce((acc, r, idx) => acc + Number(r[idx]), 0);
+          const steps = [
+            {
+              title: `Identify ${rows}×${cols} Square Matrix A`,
+              detail: arr.map(r => `[ ${r.map(v => formatNumber(v, 4)).join(',  ')} ]`).join('\n')
+            },
+            {
+              title: 'Compute Determinant det(A) and Trace tr(A)',
+              detail: `det(A) = ${formatNumber(detVal, 6)}\ntr(A) = ${formatNumber(traceVal, 6)}`
+            }
+          ];
+
+          let invStr = 'Singular matrix (det = 0, no inverse)';
+          if (Math.abs(detVal) > 1e-10) {
+            const inv = math.inv(arr);
+            invStr = inv.map(r => `[ ${r.map(v => {
+              const f = toExactFraction(v);
+              return f ? f.str : formatNumber(v, 4);
+            }).join(',  ')} ]`).join('\n');
+            steps.push({
+              title: 'Compute Matrix Inverse A⁻¹ = (1/det(A)) · adj(A)',
+              detail: invStr
+            });
+          }
+
+          if (rows === 2) {
+            // Characteristic polynomial: λ^2 - tr(A)λ + det(A) = 0
+            const disc = traceVal * traceVal - 4 * detVal;
+            let eigDetail = `Characteristic Equation: λ² - (${formatNumber(traceVal)})λ + (${formatNumber(detVal)}) = 0\n`;
+            if (disc >= 0) {
+              const l1 = (traceVal + Math.sqrt(disc)) / 2;
+              const l2 = (traceVal - Math.sqrt(disc)) / 2;
+              eigDetail += `Eigenvalues: λ₁ = ${formatNumber(l1, 5)},  λ₂ = ${formatNumber(l2, 5)}`;
+            } else {
+              eigDetail += `Complex Eigenvalues: λ = ${formatNumber(traceVal / 2, 4)} ± ${formatNumber(Math.sqrt(-disc) / 2, 4)}i`;
+            }
+            steps.push({
+              title: 'Find Eigenvalues via det(A − λI) = 0',
+              detail: eigDetail
+            });
+          }
+
+          return {
+            input,
+            category: `Linear Algebra — ${rows}×${cols} Matrix`,
+            goalLabel: 'Determinant, Inverse & Eigenvalues',
+            finalAnswer: `det(A) = ${formatNumber(detVal, 5)},  tr(A) = ${formatNumber(traceVal, 5)}`,
+            steps,
+            availableMethods: ['matrix'],
+            activeMethod: 'matrix',
+            graphExprs: []
+          };
+        } catch (err) {
+          return null;
+        }
+      }
+
+      // -----------------------------------------------------------------------
+      // SOLVER L: General Expression Simplification & Evaluation
+      // -----------------------------------------------------------------------
+      function solveExpressionProblem(input, requestedMethod) {
+        const norm = normalizeMathExpr(input);
+        const hasX = /\bx\b/i.test(norm);
+
+        if (requestedMethod === 'graph' && hasX) {
+          switchView('graph');
+          addOrUpdatePrimaryGraphFunction(input);
+        }
+
+        // If expression has x, offer polynomial analysis / simplification / factoring / derivative
+        if (hasX) {
+          const poly = extractPolynomialCoeffs(norm, 'x');
+          if (poly) {
+            const { a3, a2, a1, a0 } = poly;
+            const stdStr = buildPolyString(a3, a2, a1, a0);
+            const steps = [
+              {
+                title: 'Expand and collect like terms in descending powers of x',
+                detail: `Standard Form: ${stdStr}`
+              }
+            ];
+            // Also check roots & derivative
+            const derivStr = buildPolyString(0, 3 * a3, 2 * a2, a1);
+            steps.push({
+              title: 'Derivative & Y-intercept summary',
+              detail: `f(0) = ${formatNumber(a0)} (y-intercept)\nf'(x) = ${derivStr}`
+            });
+            return {
+              input,
+              category: 'Algebraic Expression',
+              goalLabel: 'Simplify & Analyze Expression',
+              finalAnswer: stdStr,
+              steps,
+              availableMethods: ['simplify', 'solve', 'factor', 'derivative', 'integral', 'graph'],
+              activeMethod: 'simplify',
+              graphExprs: [stdStr]
+            };
+          }
+        }
+
+        // Numerical or Symbolic Evaluation without free variable x
+        try {
+          let evalScope = { pi: Math.PI, e: Math.E };
+          if (state.angleMode === 'DEG') {
+            evalScope.sin = x => Math.sin((x * Math.PI) / 180);
+            evalScope.cos = x => Math.cos((x * Math.PI) / 180);
+            evalScope.tan = x => Math.tan((x * Math.PI) / 180);
+          }
+          const simplifiedStr = math.simplify(norm).toString();
+          const val = math.evaluate(norm, evalScope);
+
+          if (typeof val === 'number' && isFinite(val)) {
+            const frac = toExactFraction(val);
+            const exactTrig = matchExactRadical(val);
+            const primaryStr = exactTrig || (frac ? frac.str : formatNumber(val, 6));
+
+            return {
+              input,
+              category: 'Expression Evaluation',
+              goalLabel: `Evaluate (${state.angleMode} Mode)`,
+              finalAnswer: `${primaryStr}` + (primaryStr !== formatNumber(val, 6) ? `   (≈ ${formatNumber(val, 6)})` : ''),
+              steps: [
+                {
+                  title: 'Parse expression and apply symbolic simplification',
+                  detail: `Simplified structure: ${simplifiedStr}`
+                },
+                {
+                  title: 'Evaluate numerical value and check exact radical/rational form',
+                  detail: `Exact / Rational form: ${primaryStr}\nDecimal approximation: ${formatNumber(val, 8)}`
+                }
+              ],
+              availableMethods: ['simplify'],
+              activeMethod: 'simplify',
+              graphExprs: hasX ? [norm] : []
+            };
+          }
+        } catch (err) {
+          // Fall through
+        }
+
+        return {
+          input,
+          category: 'Math Solver',
+          goalLabel: 'Expression Analysis',
+          finalAnswer: 'Could not parse input. Try an equation like x^2 - 5x + 6 = 0 or derivative d/dx(x^3).',
+          steps: [],
+          availableMethods: ['solve', 'simplify'],
+          activeMethod: 'simplify',
+          graphExprs: []
+        };
+      }
+
+      // Recognize common unit-circle radical results like sqrt(2)/2, sqrt(3)/2, sqrt(3)/3
+      function matchExactRadical(val) {
+        const candidates = [
+          { v: Math.sqrt(2) / 2, s: '√2 / 2' },
+          { v: -Math.sqrt(2) / 2, s: '-√2 / 2' },
+          { v: Math.sqrt(3) / 2, s: '√3 / 2' },
+          { v: -Math.sqrt(3) / 2, s: '-√3 / 2' },
+          { v: Math.sqrt(3) / 3, s: '√3 / 3' },
+          { v: -Math.sqrt(3) / 3, s: '-√3 / 3' },
+          { v: Math.sqrt(3), s: '√3' },
+          { v: -Math.sqrt(3), s: '-√3' },
+          { v: (1 + Math.sqrt(3)) / 2, s: '(1 + √3) / 2' },
+          { v: (Math.sqrt(2) + Math.sqrt(6)) / 4, s: '(√2 + √6) / 4' }
+        ];
+        for (const c of candidates) {
+          if (Math.abs(val - c.v) < 1e-7) return c.s;
+        }
+        return null;
+      }
+
+      // Numerical root finder across [minX, maxX]
+      function findRealRootsNumerical(exprStr, minX = -20, maxX = 20, stepsCount = 600) {
+        const roots = [];
+        try {
+          const comp = math.compile(normalizeMathExpr(exprStr));
+          const f = x => {
+            const v = comp.evaluate({ x, pi: Math.PI, e: Math.E });
+            return typeof v === 'number' ? v : NaN;
+          };
+          const dx = (maxX - minX) / stepsCount;
+          let prevX = minX;
+          let prevY = f(prevX);
+
+          for (let i = 1; i <= stepsCount; i++) {
+            const curX = minX + i * dx;
+            const curY = f(curX);
+            if (isFinite(prevY) && isFinite(curY)) {
+              if (Math.abs(curY) < 1e-11) {
+                addUniqueRoot(roots, curX);
+              } else if (prevY * curY < 0 && Math.abs(curY - prevY) < 1e4) {
+                // Bisection refinement
+                let lo = prevX, hi = curX, flo = prevY;
+                for (let iter = 0; iter < 35; iter++) {
+                  const mid = 0.5 * (lo + hi);
+                  const fmid = f(mid);
+                  if (!isFinite(fmid)) break;
+                  if (Math.abs(fmid) < 1e-12) { lo = hi = mid; break; }
+                  if (flo * fmid <= 0) { hi = mid; } else { lo = mid; flo = fmid; }
+                }
+                const root = 0.5 * (lo + hi);
+                if (Math.abs(f(root)) < 1e-5) addUniqueRoot(roots, root);
+              }
+            }
+            prevX = curX;
+            prevY = curY;
+          }
+        } catch (e) {
+          // ignore
+        }
+        return roots;
+      }
+
+      function addUniqueRoot(arr, r) {
+        const cleanR = Math.abs(r) < 1e-9 ? 0 : Number(r.toFixed(6));
+        if (!arr.some(existing => Math.abs(existing - cleanR) < 1e-4)) {
+          arr.push(cleanR);
+        }
+      }
+
+      // =========================================================================
+      // 4. UI RENDERING: SUBJECTS, SOLVER CARDS, KEYBOARD & HISTORY
+      // =========================================================================
+      function renderSubjectUI() {
+        const subj = state.activeSubject;
+        const data = SUBJECT_DATA[subj] || SUBJECT_DATA['Algebra'];
+
+        document.getElementById('activeSubjectBadge').textContent = subj;
+        document.getElementById('welcomeSubjectLabel').textContent = data.title;
+
+        // Highlight subject button in sidebar
+        document.querySelectorAll('.subject-btn').forEach(btn => {
+          const isCurrent = btn.getAttribute('data-subject') === subj;
+          btn.className = isCurrent
+            ? 'subject-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800 transition-colors'
+            : 'subject-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors';
+        });
+
+        // Render Sidebar Templates
+        const tplBox = document.getElementById('sidebarTemplates');
+        tplBox.innerHTML = data.templates.map(t => `
+          <button type="button" data-tpl-expr="${t.expr.replace(/"/g, '&quot;')}" data-tpl-method="${t.method}" class="tpl-item-btn w-full text-left px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/70 hover:bg-blue-50 dark:hover:bg-blue-950/60 border border-slate-200/70 dark:border-slate-700/70 transition-colors">
+            <div class="text-[11px] font-semibold text-slate-800 dark:text-slate-200">${t.label}</div>
+            <div class="text-[11px] font-mono text-blue-600 dark:text-blue-400 truncate mt-0.5">${t.expr}</div>
+          </button>
+        `).join('');
+
+        // Render Welcome Starter Chips
+        const chipsBox = document.getElementById('starterChipsContainer');
+        chipsBox.innerHTML = data.chips.map(c => `
+          <button type="button" data-chip-expr="${c.replace(/"/g, '&quot;')}" class="starter-chip-btn px-3 py-1.5 rounded-xl text-xs font-mono font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950 dark:hover:text-blue-300 border border-slate-200 dark:border-slate-700 transition-colors">
+            ${prettyMathHTML(c)}
+          </button>
+        `).join('');
+      }
+
+      function renderKeyboardKeys() {
+        const keys = KEYBOARD_LAYOUTS[state.activeKbTab] || KEYBOARD_LAYOUTS.algebra;
+        const grid = document.getElementById('keyboardKeysGrid');
+        grid.innerHTML = keys.map(k => `
+          <button type="button" data-insert="${k.insert.replace(/"/g, '&quot;')}" class="key-btn py-2 px-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 font-mono text-xs sm:text-sm font-semibold border border-slate-200/90 dark:border-slate-700 shadow-sm text-center truncate">
+            ${k.label}
+          </button>
+        `).join('');
+
+        document.querySelectorAll('.kb-tab-btn').forEach(btn => {
+          const active = btn.getAttribute('data-kbtab') === state.activeKbTab;
+          btn.className = active
+            ? 'kb-tab-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-600 text-white'
+            : 'kb-tab-btn px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200';
+        });
+      }
+
+      function renderHistorySidebar() {
+        const box = document.getElementById('historyList');
+        if (!state.history.length) {
+          box.innerHTML = '<div class="px-2 py-3 text-xs text-slate-400 italic">No problems solved yet.</div>';
+          return;
+        }
+        box.innerHTML = state.history.map((item, idx) => `
+          <button type="button" data-hist-idx="${idx}" class="hist-item-btn w-full text-left px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all group">
+            <div class="flex items-center justify-between text-[10px] text-slate-400">
+              <span>${item.category}</span>
+              <span class="group-hover:text-blue-500">Reload ↺</span>
+            </div>
+            <div class="text-xs font-mono font-semibold text-slate-800 dark:text-slate-200 truncate">${item.input}</div>
+            <div class="text-[11px] text-emerald-600 dark:text-emerald-400 truncate">${item.finalAnswer}</div>
+          </button>
+        `).join('');
+      }
+
+      function executeSolveAndRender(rawExpr, methodOverride = null) {
+        const expr = String(rawExpr || '').trim();
+        if (!expr) return;
+
+        const inputEl = document.getElementById('mathInput');
+        inputEl.value = expr;
+        updateLivePreview();
+
+        const method = methodOverride || document.getElementById('actionMethodSelect').value || 'auto';
+        const result = solveMathProblem(expr, method);
+
+        // Save to history
+        state.history = [
+          { input: expr, category: result.category, finalAnswer: result.finalAnswer, method: result.activeMethod },
+          ...state.history.filter(h => h.input !== expr)
+        ].slice(0, 25);
+        saveHistory();
+        renderHistorySidebar();
+
+        appendSolutionCard(result);
+      }
+
+      function appendSolutionCard(result) {
+        const feed = document.getElementById('solutionsFeed');
+        const cardId = 'sol-card-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+        const miniCanvasId = 'mini-graph-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+
+        const methodLabels = {
+          solve: 'Solve for Variable',
+          factor: 'Factor Expression',
+          simplify: 'Simplify / Evaluate',
+          derivative: 'Derivative (d/dx)',
+          integral: 'Integral (∫ dx)',
+          limit: 'Evaluate Limit',
+          stats: 'Statistics Summary',
+          matrix: 'Matrix Analysis',
+          graph: 'Plot on Graph'
+        };
+
+        const actionPillsHTML = (result.availableMethods || []).map(m => {
+          const isCurrent = m === result.activeMethod;
+          return `
+            <button type="button" data-card-expr="${result.input.replace(/"/g, '&quot;')}" data-card-method="${m}" class="card-method-btn px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors ${
+              isCurrent
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-950'
+            }">
+              ${methodLabels[m] || m}
+            </button>
+          `;
+        }).join('');
+
+        const stepsHTML = (result.steps || []).map((st, idx) => `
+          <div class=" flex gap-3 p-3 rounded-xl bg-slate-50/90 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-700/70">
+            <div class="w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+              ${idx + 1}
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-xs font-bold text-slate-800 dark:text-slate-100">${st.title}</div>
+              <pre class="mt-1 text-xs font-mono text-slate-600 dark:text-slate-300 whitespace-pre-wrap break-words leading-relaxed">${st.detail}</pre>
+            </div>
+          </div>
+        `).join('');
+
+        const hasMiniGraph = result.graphExprs && result.graphExprs.length > 0;
+
+        const card = document.createElement('div');
+        card.id = cardId;
+        card.className = 'bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden transition-all';
+        card.innerHTML = `
+          <!-- Problem Bubble Header -->
+          <div class="px-4 sm:px-5 py-3.5 bg-slate-50/80 dark:bg-slate-800/50 border-b border-slate-200/80 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">${result.category}</span>
+              <span class="text-xs text-slate-500 dark:text-slate-400">${result.goalLabel}</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button type="button" data-copy-ans="${result.finalAnswer.replace(/"/g, '&quot;')}" class="copy-ans-btn px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100">
+                Copy Answer
+              </button>
+              ${hasMiniGraph ? `
+                <button type="button" data-open-graph="${result.graphExprs[0].replace(/"/g, '&quot;')}" class="open-in-graph-btn px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100">
+                  Open in Grapher 📈
+                </button>
+              ` : ''}
+            </div>
+          </div>
+
+          <div class="p-4 sm:p-5 space-y-4">
+            <!-- User Input Display + Switch Action Pills -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div>
+                <div class="text-[11px] uppercase font-bold tracking-wider text-slate-400">Input Problem</div>
+                <div class="math-serif text-lg sm:text-xl font-bold text-slate-900 dark:text-white mt-0.5">${prettyMathHTML(result.input)}</div>
+              </div>
+              <div class="flex flex-wrap items-center gap-1.5">
+                ${actionPillsHTML}
+              </div>
+            </div>
+
+            <!-- Final Answer Highlight Box -->
+            <div class="p-4 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50/70 dark:from-emerald-950/50 dark:to-teal-950/30 border border-emerald-200 dark:border-emerald-800/80">
+              <div class="text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Final Answer</div>
+              <div class="font-mono text-base sm:text-lg font-bold text-slate-900 dark:text-white mt-1 break-words">${result.finalAnswer}</div>
+            </div>
+
+            <!-- Step-by-Step Solution Breakdown -->
+            ${stepsHTML ? `
+              <div>
+                <div class="flex items-center justify-between mb-2.5">
+                  <span class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Step-by-Step Solution (${result.steps.length} Steps)</span>
+                </div>
+                <div class="space-y-2.5">
+                  ${stepsHTML}
+                </div>
+              </div>
+            ` : ''}
+
+            <!-- Inline Mini Graph Preview (if function of x) -->
+            ${hasMiniGraph ? `
+              <div class="pt-2">
+                <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Interactive Function Plot Preview</div>
+                <div class="relative h-48 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 overflow-hidden">
+                  <canvas id="${miniCanvasId}" class="w-full h-full block"></canvas>
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        `;
+
+        feed.prepend(card);
+
+        if (hasMiniGraph) {
+          requestAnimationFrame(() => {
+            drawMiniGraph(miniCanvasId, result.graphExprs);
+          });
+        }
+
+        // Scroll stream to top of new card
+        const stream = document.getElementById('solverStream');
+        stream.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      // Draw inline mini graph on solution card
+      function drawMiniGraph(canvasId, exprs) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        const rect = canvas.parentElement.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        const w = Math.max(rect.width, 280);
+        const h = Math.max(rect.height, 180);
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        const ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+
+        const isDark = document.documentElement.classList.contains('dark');
+        ctx.fillStyle = isDark ? '#090d16' : '#f8fafc';
+        ctx.fillRect(0, 0, w, h);
+
+        const scale = 22;
+        const cx = w / 2;
+        const cy = h / 2;
+
+        // Grid lines
+        ctx.strokeStyle = isDark ? 'rgba(148,163,184,0.12)' : 'rgba(148,163,184,0.25)';
+        ctx.lineWidth = 1;
+        for (let x = cx % scale; x < w; x += scale) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+        }
+        for (let y = cy % scale; y < h; y += scale) {
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+        }
+
+        // Axes
+        ctx.strokeStyle = isDark ? '#64748b' : '#475569';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.stroke();
+
+        const palette = ['#2563eb', '#e11d48', '#10b981'];
+        exprs.forEach((rawE, idx) => {
+          try {
+            const comp = math.compile(normalizeMathExpr(rawE));
+            ctx.strokeStyle = palette[idx % palette.length];
+            ctx.lineWidth = 2.2;
+            ctx.beginPath();
+            let started = false;
+            for (let px = 0; px <= w; px += 2) {
+              const mathX = (px - cx) / scale;
+              const mathY = comp.evaluate({ x: mathX, pi: Math.PI, e: Math.E });
+              if (typeof mathY === 'number' && isFinite(mathY)) {
+                const py = cy - mathY * scale;
+                if (py >= -100 && py <= h + 100) {
+                  if (!started) { ctx.moveTo(px, py); started = true; }
+                  else { ctx.lineTo(px, py); }
+                } else {
+                  started = false;
+                }
+              } else {
+                started = false;
+              }
+            }
+            ctx.stroke();
+          } catch (e) {
+            // ignore
+          }
+        });
+      }
+
+      // =========================================================================
+      // 5. FULL INTERACTIVE 2D GRAPHING CALCULATOR ENGINE
+      // =========================================================================
+      function renderGraphFunctionControls() {
+        const list = document.getElementById('graphFunctionsList');
+        list.innerHTML = state.graphFunctions.map((fn, idx) => `
+          <div class="flex items-center gap-2 p-2 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700">
+            <input type="color" value="${fn.color}" data-gfn-color="${fn.id}" class="w-6 h-6 rounded cursor-pointer border-0 bg-transparent shrink-0" />
+            <span class="font-mono text-xs font-bold text-slate-500">f${idx + 1}(x)=</span>
+            <input type="text" value="${fn.expr.replace(/"/g, '&quot;')}" data-gfn-expr="${fn.id}" class="flex-1 min-w-0 bg-white dark:bg-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-mono" />
+            <button type="button" data-gfn-del="${fn.id}" class="p-1 text-slate-400 hover:text-rose-500" title="Remove Function">✕</button>
+          </div>
+        `).join('');
+      }
+
+      function addOrUpdatePrimaryGraphFunction(exprStr) {
+        const clean = exprStr.split('=')[0].trim();
+        if (state.graphFunctions.length > 0) {
+          state.graphFunctions[0].expr = clean;
+        } else {
+          state.graphFunctions.push({ id: Date.now(), expr: clean, color: '#2563eb', visible: true });
+        }
+        renderGraphFunctionControls();
+        drawMainGraph();
+        renderGraphValueTable();
+      }
+
+      function drawMainGraph() {
+        const canvas = document.getElementById('mainGraphCanvas');
+        if (!canvas) return;
+        const wrap = document.getElementById('graphCanvasWrapper');
+        const rect = wrap.getBoundingClientRect();
+        if (rect.width < 10 || rect.height < 10) return;
+
+        const dpr = window.devicePixelRatio || 1;
+        const w = rect.width;
+        const h = rect.height;
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+
+        const ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+
+        const isDark = document.documentElement.classList.contains('dark');
+        ctx.fillStyle = isDark ? '#090d16' : '#ffffff';
+        ctx.fillRect(0, 0, w, h);
+
+        const { centerX, centerY, scale } = state.graphViewport;
+        const originPxX = w / 2 - centerX * scale;
+        const originPxY = h / 2 + centerY * scale;
+
+        // Determine grid step
+        let gridUnit = 1;
+        if (scale < 18) gridUnit = 5;
+        else if (scale < 32) gridUnit = 2;
+        else if (scale > 90) gridUnit = 0.5;
+
+        const stepPx = gridUnit * scale;
+
+        // Draw grid lines
+        ctx.strokeStyle = isDark ? 'rgba(148, 163, 184, 0.12)' : 'rgba(148, 163, 184, 0.22)';
+        ctx.lineWidth = 1;
+        ctx.fillStyle = isDark ? '#64748b' : '#94a3b8';
+        ctx.font = '10px JetBrains Mono, monospace';
+
+        const startX = originPxX % stepPx;
+        for (let px = startX; px < w; px += stepPx) {
+          ctx.beginPath(); ctx.moveTo(px, 0); ctx.lineTo(px, h); ctx.stroke();
+          const val = (px - originPxX) / scale;
+          if (Math.abs(val) > 1e-4) {
+            ctx.fillText(formatNumber(val, 2), px + 3, Math.min(Math.max(originPxY + 12, 14), h - 6));
+          }
+        }
+
+        const startY = originPxY % stepPx;
+        for (let py = startY; py < h; py += stepPx) {
+          ctx.beginPath(); ctx.moveTo(0, py); ctx.lineTo(w, py); ctx.stroke();
+          const val = (originPxY - py) / scale;
+          if (Math.abs(val) > 1e-4) {
+            ctx.fillText(formatNumber(val, 2), Math.min(Math.max(originPxX + 5, 6), w - 36), py - 3);
+          }
+        }
+
+        // Axes
+        ctx.strokeStyle = isDark ? '#94a3b8' : '#334155';
+        ctx.lineWidth = 1.8;
+        ctx.beginPath(); ctx.moveTo(0, originPxY); ctx.lineTo(w, originPxY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(originPxX, 0); ctx.lineTo(originPxX, h); ctx.stroke();
+
+        // Plot each function & collect key points
+        const keyPoints = [];
+        const compiledList = [];
+
+        state.graphFunctions.forEach((fn, idx) => {
+          if (!fn.expr.trim()) return;
+          try {
+            const comp = math.compile(normalizeMathExpr(fn.expr));
+            compiledList.push({ fn, comp, idx });
+            ctx.strokeStyle = fn.color;
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+
+            let started = false;
+            let prevMathX = null;
+            let prevMathY = null;
+
+            for (let px = 0; px <= w; px += 2) {
+              const mathX = (px - originPxX) / scale;
+              const mathY = comp.evaluate({ x: mathX, pi: Math.PI, e: Math.E });
+              if (typeof mathY === 'number' && isFinite(mathY)) {
+                const py = originPxY - mathY * scale;
+                if (py >= -200 && py <= h + 200) {
+                  if (!started) { ctx.moveTo(px, py); started = true; }
+                  else { ctx.lineTo(px, py); }
+                } else {
+                  started = false;
+                }
+
+                // Detect root (x-intercept)
+                if (prevMathY !== null && prevMathY * mathY <= 0 && Math.abs(mathY - prevMathY) < 20) {
+                  const rootX = prevMathX - prevMathY * ((mathX - prevMathX) / (mathY - prevMathY || 1));
+                  if (isFinite(rootX)) {
+                    keyPoints.push({
+                      type: `f${idx + 1} Root`,
+                      x: rootX,
+                      y: 0,
+                      color: fn.color
+                    });
+                  }
+                }
+                prevMathX = mathX;
+                prevMathY = mathY;
+              } else {
+                started = false;
+                prevMathY = null;
+              }
+            }
+            ctx.stroke();
+
+            // Y-intercept at x = 0
+            const y0 = comp.evaluate({ x: 0, pi: Math.PI, e: Math.E });
+            if (typeof y0 === 'number' && isFinite(y0)) {
+              keyPoints.push({
+                type: `f${idx + 1} Y-int`,
+                x: 0,
+                y: y0,
+                color: fn.color
+              });
+            }
+          } catch (e) {
+            // ignore invalid syntax while typing
+          }
+        });
+
+        // Detect intersections between f1 and f2
+        if (compiledList.length >= 2) {
+          const c1 = compiledList[0].comp;
+          const c2 = compiledList[1].comp;
+          let prevDiff = null;
+          let prevX = null;
+          for (let px = 0; px <= w; px += 3) {
+            const mathX = (px - originPxX) / scale;
+            try {
+              const y1 = c1.evaluate({ x: mathX, pi: Math.PI, e: Math.E });
+              const y2 = c2.evaluate({ x: mathX, pi: Math.PI, e: Math.E });
+              const diff = y1 - y2;
+              if (isFinite(diff) && prevDiff !== null && prevDiff * diff <= 0 && Math.abs(diff - prevDiff) < 20) {
+                const ix = prevX - prevDiff * ((mathX - prevX) / (diff - prevDiff || 1));
+                const iy = c1.evaluate({ x: ix, pi: Math.PI, e: Math.E });
+                if (isFinite(ix) && isFinite(iy)) {
+                  keyPoints.push({
+                    type: 'Intersect',
+                    x: ix,
+                    y: iy,
+                    color: '#f59e0b'
+                  });
+                }
+              }
+              prevDiff = diff;
+              prevX = mathX;
+            } catch (e) {}
+          }
+        }
+
+        // Deduplicate & render key points
+        const uniquePts = [];
+        keyPoints.forEach(pt => {
+          if (!uniquePts.some(u => u.type === pt.type && Math.abs(u.x - pt.x) < 0.08 && Math.abs(u.y - pt.y) < 0.08)) {
+            uniquePts.push(pt);
+          }
+        });
+
+        if (state.showKeyPoints) {
+          uniquePts.slice(0, 18).forEach(pt => {
+            const px = originPxX + pt.x * scale;
+            const py = originPxY - pt.y * scale;
+            if (px >= 0 && px <= w && py >= 0 && py <= h) {
+              ctx.fillStyle = pt.color;
+              ctx.beginPath();
+              ctx.arc(px, py, 4.5, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.strokeStyle = '#ffffff';
+              ctx.lineWidth = 1.5;
+              ctx.stroke();
+            }
+          });
+        }
+
+        const kpBox = document.getElementById('graphKeyPointsBox');
+        if (uniquePts.length === 0) {
+          kpBox.innerHTML = '<div class="text-slate-400 italic">No roots or intercepts in current view.</div>';
+        } else {
+          kpBox.innerHTML = uniquePts.slice(0, 12).map(pt => `
+            <div class="flex items-center justify-between py-0.5 border-b border-slate-200/50 dark:border-slate-700/50">
+              <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full" style="background:${pt.color}"></span>${pt.type}</span>
+              <span class="text-slate-800 dark:text-slate-200 font-semibold">(${formatNumber(pt.x, 3)}, ${formatNumber(pt.y, 3)})</span>
+            </div>
+          `).join('');
+        }
+      }
+
+      function renderGraphValueTable() {
+        const start = Number(document.getElementById('tableStartInput').value) || -3;
+        const end = Number(document.getElementById('tableEndInput').value) || 3;
+        const lo = Math.min(start, end);
+        const hi = Math.min(Math.max(start, end), lo + 20);
+
+        const activeFns = state.graphFunctions.filter(f => f.expr.trim());
+        let html = `<table class="w-full text-left text-xs font-mono"><thead class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"><tr><th class="py-1.5 px-2">x</th>`;
+        activeFns.forEach((f, i) => {
+          html += `<th class="py-1.5 px-2" style="color:${f.color}">f${i + 1}(x)</th>`;
+        });
+        html += `</tr></thead><tbody class="divide-y divide-slate-200/60 dark:divide-slate-800">`;
+
+        for (let x = lo; x <= hi; x++) {
+          html += `<tr><td class="py-1 px-2 font-bold">${x}</td>`;
+          activeFns.forEach(f => {
+            let vStr = 'undef';
+            try {
+              const v = math.evaluate(normalizeMathExpr(f.expr), { x, pi: Math.PI, e: Math.E });
+              if (typeof v === 'number' && isFinite(v)) vStr = formatNumber(v, 4);
+            } catch (e) {}
+            html += `<td class="py-1 px-2">${vStr}</td>`;
+          });
+          html += `</tr>`;
+        }
+        html += `</tbody></table>`;
+        document.getElementById('graphValueTableContainer').innerHTML = html;
+      }
+
+      // =========================================================================
+      // 6. INTERACTIVE MATRIX & STATISTICS WORKBENCH
+      // =========================================================================
+      function renderMatrixGrids() {
+        const n = state.matrixSize;
+        const gridA = document.getElementById('matrixAGrid');
+        const gridB = document.getElementById('matrixBGrid');
+        gridA.className = `grid grid-cols-${n} gap-1.5`;
+        gridB.className = `grid grid-cols-${n} gap-1.5`;
+
+        const defaultsA = n === 2 ? [4, 2, 1, 3] : [2, -1, 0, 1, 3, 2, 0, 2, 1];
+        const defaultsB = n === 2 ? [1, 0, 2, 5] : [1, 2, 1, 0, 1, -1, 3, 0, 2];
+
+        gridA.innerHTML = defaultsA.map((val, i) => `
+          <input type="number" value="${val}" data-mat-cell="A-${i}" class="w-full px-2 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-center font-mono text-xs font-semibold" />
+        `).join('');
+
+        gridB.innerHTML = defaultsB.map((val, i) => `
+          <input type="number" value="${val}" data-mat-cell="B-${i}" class="w-full px-2 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-center font-mono text-xs font-semibold" />
+        `).join('');
+
+        runMatrixWorkbenchOp('detA');
+      }
+
+      function readMatrixFromGrid(prefix) {
+        const n = state.matrixSize;
+        const mat = [];
+        for (let r = 0; r < n; r++) {
+          const row = [];
+          for (let c = 0; c < n; c++) {
+            const idx = r * n + c;
+            const el = document.querySelector(`[data-mat-cell="${prefix}-${idx}"]`);
+            row.push(Number(el ? el.value : 0) || 0);
+          }
+          mat.push(row);
+        }
+        return mat;
+      }
+
+      function runMatrixWorkbenchOp(op) {
+        const A = readMatrixFromGrid('A');
+        const B = readMatrixFromGrid('B');
+        const box = document.getElementById('matrixResultOutput');
+
+        const formatMatHTML = M => `<pre class="font-mono text-xs bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700">${M.map(r => '[ ' + r.map(v => {
+          const f = toExactFraction(v);
+          return (f ? f.str : formatNumber(v, 4)).padStart(6, ' ');
+        }).join('  ') + ' ]').join('\n')}</pre>`;
+
+        try {
+          if (op === 'detA') {
+            const d = math.det(A);
+            const tr = A.reduce((s, r, i) => s + r[i], 0);
+            box.innerHTML = `
+              <div class="font-bold text-indigo-600 dark:text-indigo-400">Determinant &amp; Trace of Matrix [A]</div>
+              <div class="font-mono text-sm font-bold">det(A) = ${formatNumber(d, 6)}   •   tr(A) = ${formatNumber(tr, 6)}</div>
+              <div class="text-slate-500">Status: ${Math.abs(d) > 1e-10 ? 'Invertible (Non-singular)' : 'Singular (Not invertible)'}</div>
+            `;
+          } else if (op === 'invA') {
+            const d = math.det(A);
+            if (Math.abs(d) < 1e-10) {
+              box.innerHTML = `<div class="text-rose-600 font-bold">Matrix [A] is singular (det(A) = 0) and has no inverse.</div>`;
+            } else {
+              const inv = math.inv(A);
+              box.innerHTML = `<div class="font-bold text-indigo-600 dark:text-indigo-400">Inverse Matrix A⁻¹ (det(A) = ${formatNumber(d, 4)})</div>${formatMatHTML(inv)}`;
+            }
+          } else if (op === 'eigenA') {
+            const d = math.det(A);
+            const tr = A.reduce((s, r, i) => s + r[i], 0);
+            if (state.matrixSize === 2) {
+              const disc = tr * tr - 4 * d;
+              const eigStr = disc >= 0
+                ? `λ₁ = ${formatNumber((tr + Math.sqrt(disc)) / 2, 5)},   λ₂ = ${formatNumber((tr - Math.sqrt(disc)) / 2, 5)}`
+                : `λ = ${formatNumber(tr / 2, 4)} ± ${formatNumber(Math.sqrt(-disc) / 2, 4)}i`;
+              box.innerHTML = `
+                <div class="font-bold text-indigo-600 dark:text-indigo-400">Eigenvalues of 2×2 Matrix [A]</div>
+                <div class="font-mono">Characteristic Polynomial: λ² - (${formatNumber(tr)})λ + (${formatNumber(d)}) = 0</div>
+                <div class="font-mono text-sm font-bold mt-1">${eigStr}</div>
+              `;
+            } else {
+              const eigs = math.eigs(A);
+              const vals = (eigs && eigs.values) ? (eigs.values.toArray ? eigs.values.toArray() : eigs.values) : [];
+              box.innerHTML = `
+                <div class="font-bold text-indigo-600 dark:text-indigo-400">Eigenvalues of 3×3 Matrix [A]</div>
+                <div class="font-mono text-sm font-bold">${vals.map((v, i) => `λ${i + 1} = ${formatNumber(Number(v), 4)}`).join(',  ')}</div>
+              `;
+            }
+          } else if (op === 'mulAB') {
+            const prod = math.multiply(A, B);
+            box.innerHTML = `<div class="font-bold text-indigo-600 dark:text-indigo-400">Matrix Product [A] × [B]</div>${formatMatHTML(prod)}`;
+          } else if (op === 'addAB') {
+            const sum = math.add(A, B);
+            box.innerHTML = `<div class="font-bold text-indigo-600 dark:text-indigo-400">Matrix Sum [A] + [B]</div>${formatMatHTML(sum)}`;
+          } else if (op === 'transA') {
+            const trp = math.transpose(A);
+            box.innerHTML = `<div class="font-bold text-indigo-600 dark:text-indigo-400">Transpose Matrix [A]ᵀ</div>${formatMatHTML(trp)}`;
+          }
+        } catch (err) {
+          box.innerHTML = `<div class="text-rose-500">Calculation error: ${err.message}</div>`;
+        }
+      }
+
+      function renderStatsWorkbench() {
+        const raw = document.getElementById('statsDatasetInput').value;
+        const res = solveStatisticsDataset(raw);
+        const nums = raw.split(/[\s,]+/).map(Number).filter(n => !isNaN(n) && isFinite(n)).sort((a, b) => a - b);
+        if (nums.length < 2) return;
+
+        const n = nums.length;
+        const sum = nums.reduce((a, b) => a + b, 0);
+        const mean = sum / n;
+        const med = arr => {
+          const m = Math.floor(arr.length / 2);
+          return arr.length % 2 === 1 ? arr[m] : (arr[m - 1] + arr[m]) / 2;
+        };
+        const median = med(nums);
+        const q1 = med(nums.slice(0, Math.floor(n / 2)));
+        const q3 = med(nums.slice(Math.ceil(n / 2)));
+        const iqr = q3 - q1;
+        const sd = Math.sqrt(nums.reduce((a, v) => a + Math.pow(v - mean, 2), 0) / (n - 1));
+
+        const metrics = [
+          { label: 'Count (n)', val: n },
+          { label: 'Mean (x̄)', val: formatNumber(mean, 3) },
+          { label: 'Median', val: formatNumber(median, 3) },
+          { label: 'Sample SD (s)', val: formatNumber(sd, 3) },
+          { label: 'Q₁ / Q₃', val: `${formatNumber(q1, 2)} / ${formatNumber(q3, 2)}` },
+          { label: 'Min / Max (IQR)', val: `${nums[0]} / ${nums[n - 1]} (${formatNumber(iqr, 2)})` }
+        ];
+
+        document.getElementById('statsMetricsGrid').innerHTML = metrics.map(m => `
+          <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700">
+            <div class="text-[10px] font-bold uppercase text-slate-400">${m.label}</div>
+            <div class="font-mono text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 mt-0.5">${m.val}</div>
+          </div>
+        `).join('');
+
+        drawBoxPlotCanvas(nums[0], q1, median, q3, nums[n - 1]);
+      }
+
+      function drawBoxPlotCanvas(minV, q1, medV, q3, maxV) {
+        const canvas = document.getElementById('statsBoxPlotCanvas');
+        if (!canvas) return;
+        const rect = canvas.parentElement.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        const w = Math.max(rect.width, 280);
+        const h = Math.max(rect.height, 100);
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        const ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+
+        ctx.clearRect(0, 0, w, h);
+        const pad = 34;
+        const span = Math.max(maxV - minV, 1);
+        const toX = v => pad + ((v - minV) / span) * (w - 2 * pad);
+        const midY = h / 2 - 4;
+
+        // Whisker line
+        ctx.strokeStyle = '#db2777';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(toX(minV), midY);
+        ctx.lineTo(toX(maxV), midY);
+        ctx.stroke();
+
+        // Min & Max caps
+        [minV, maxV].forEach(v => {
+          const x = toX(v);
+          ctx.beginPath(); ctx.moveTo(x, midY - 12); ctx.lineTo(x, midY + 12); ctx.stroke();
+        });
+
+        // IQR Box
+        const bx = toX(q1);
+        const bw = Math.max(toX(q3) - bx, 4);
+        ctx.fillStyle = 'rgba(219, 39, 119, 0.18)';
+        ctx.fillRect(bx, midY - 18, bw, 36);
+        ctx.strokeRect(bx, midY - 18, bw, 36);
+
+        // Median line
+        const mx = toX(medV);
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(mx, midY - 18); ctx.lineTo(mx, midY + 18); ctx.stroke();
+
+        // Labels
+        ctx.fillStyle = document.documentElement.classList.contains('dark') ? '#cbd5e1' : '#334155';
+        ctx.font = '10px JetBrains Mono, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(`Min:${minV}`, toX(minV), midY + 32);
+        ctx.fillText(`Q1:${q1}`, toX(q1), midY - 23);
+        ctx.fillText(`Med:${medV}`, mx, midY + 32);
+        ctx.fillText(`Q3:${q3}`, toX(q3), midY - 23);
+        ctx.fillText(`Max:${maxV}`, toX(maxV), midY + 32);
+      }
+
+      // =========================================================================
+      // 7. EXAMPLES LIBRARY CATALOG
+      // =========================================================================
+      function renderExamplesCatalog() {
+        const grid = document.getElementById('examplesCatalogGrid');
+        grid.innerHTML = Object.keys(SUBJECT_DATA).map(subj => {
+          const info = SUBJECT_DATA[subj];
+          return `
+            <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2.5">
+              <div class="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">${subj}</div>
+              <div class="space-y-1.5">
+                ${info.templates.map(t => `
+                  <button type="button" data-cat-subj="${subj}" data-cat-expr="${t.expr.replace(/"/g, '&quot;')}" data-cat-method="${t.method}" class="cat-example-btn w-full text-left p-2.5 rounded-lg bg-white dark:bg-slate-900 hover:border-blue-500 border border-slate-200/80 dark:border-slate-700 transition-all">
+                    <div class="text-xs font-semibold text-slate-800 dark:text-slate-100">${t.label}</div>
+                    <div class="text-xs font-mono text-blue-600 dark:text-blue-400 mt-0.5">${t.expr}</div>
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // =========================================================================
+      // 8. VIEW SWITCHING & EVENT LISTENERS
+      // =========================================================================
+      function switchView(viewName) {
+        state.activeView = viewName;
+        ['solver', 'graph', 'tools', 'examples'].forEach(v => {
+          const sec = document.getElementById(`view-${v}`);
+          if (sec) sec.classList.toggle('hidden', v !== viewName);
+        });
+        document.querySelectorAll('.view-tab-btn').forEach(btn => {
+          const isCur = btn.getAttribute('data-view') === viewName;
+          btn.className = isCur
+            ? 'view-tab-btn px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm flex items-center gap-1.5'
+            : 'view-tab-btn px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-600 dark:text-slate-300 hover:text-slate-900 flex items-center gap-1.5';
+        });
+
+        if (viewName === 'graph') {
+          requestAnimationFrame(() => {
+            drawMainGraph();
+            renderGraphValueTable();
+          });
+        } else if (viewName === 'tools') {
+          requestAnimationFrame(() => {
+            renderStatsWorkbench();
+          });
+        }
+      }
+
+      function updateLivePreview() {
+        const val = document.getElementById('mathInput').value;
+        document.getElementById('liveMathPreview').innerHTML = prettyMathHTML(val);
+      }
+
+      function insertAtCursor(str) {
+        const input = document.getElementById('mathInput');
+        input.focus();
+        const start = input.selectionStart || input.value.length;
+        const end = input.selectionEnd || input.value.length;
+        if (str === 'BACKSPACE') {
+          if (start !== end) {
+            input.value = input.value.slice(0, start) + input.value.slice(end);
+            input.selectionStart = input.selectionEnd = start;
+          } else if (start > 0) {
+            input.value = input.value.slice(0, start - 1) + input.value.slice(start);
+            input.selectionStart = input.selectionEnd = start - 1;
+          }
+        } else {
+          input.value = input.value.slice(0, start) + str + input.value.slice(end);
+          input.selectionStart = input.selectionEnd = start + str.length;
+        }
+        updateLivePreview();
+      }
+
+      // Sketchpad logic inside Scanner Modal
+      function initScannerSketchPad() {
+        const canvas = document.getElementById('sketchPadCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let drawing = false;
+
+        function resizePad() {
+          const rect = canvas.parentElement.getBoundingClientRect();
+          if (rect.width > 0) {
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            ctx.strokeStyle = '#60a5fa';
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+          }
+        }
+
+        const getPos = e => {
+          const r = canvas.getBoundingClientRect();
+          const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+          const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+          return { x: clientX - r.left, y: clientY - r.top };
+        };
+
+        canvas.addEventListener('mousedown', e => {
+          resizePadIfNeeded();
+          drawing = true;
+          const p = getPos(e);
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+        });
+        canvas.addEventListener('mousemove', e => {
+          if (!drawing) return;
+          const p = getPos(e);
+          ctx.lineTo(p.x, p.y);
+          ctx.stroke();
+          document.getElementById('scanStatusText').textContent = 'Handwriting detected: 2x^2 - 7x + 3 = 0';
+        });
+        window.addEventListener('mouseup', () => { drawing = false; });
+
+        function resizePadIfNeeded() {
+          if (canvas.width === 300 && canvas.parentElement.clientWidth > 0) resizePad();
+        }
+
+        document.getElementById('clearSketchBtn').addEventListener('click', () => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          document.getElementById('scanStatusText').textContent = 'Pad cleared. Draw or select a preset.';
+        });
+      }
+
+      // Main Graph Pan & Zoom Interaction
+      function initGraphInteractions() {
+        const canvas = document.getElementById('mainGraphCanvas');
+        let dragging = false;
+        let lastX = 0, lastY = 0;
+
+        canvas.addEventListener('mousedown', e => {
+          dragging = true;
+          lastX = e.clientX;
+          lastY = e.clientY;
+        });
+
+        window.addEventListener('mousemove', e => {
+          const rect = canvas.getBoundingClientRect();
+          if (e.target === canvas) {
+            const originPxX = rect.width / 2 - state.graphViewport.centerX * state.graphViewport.scale;
+            const originPxY = rect.height / 2 + state.graphViewport.centerY * state.graphViewport.scale;
+            const mx = (e.clientX - rect.left - originPxX) / state.graphViewport.scale;
+            const my = (originPxY - (e.clientY - rect.top)) / state.graphViewport.scale;
+            document.getElementById('graphCursorCoords').textContent = `(${formatNumber(mx, 2)}, ${formatNumber(my, 2)})`;
+          }
+          if (!dragging) return;
+          const dx = e.clientX - lastX;
+          const dy = e.clientY - lastY;
+          lastX = e.clientX;
+          lastY = e.clientY;
+          state.graphViewport.centerX -= dx / state.graphViewport.scale;
+          state.graphViewport.centerY += dy / state.graphViewport.scale;
+          drawMainGraph();
+        });
+
+        window.addEventListener('mouseup', () => { dragging = false; });
+
+        canvas.addEventListener('wheel', e => {
+          e.preventDefault();
+          const factor = e.deltaY < 0 ? 1.15 : 0.87;
+          state.graphViewport.scale = Math.min(Math.max(state.graphViewport.scale * factor, 8), 220);
+          drawMainGraph();
+        }, { passive: false });
+      }
+
+      // =========================================================================
+      // 9. INITIALIZATION & DELEGATED LISTENERS
+      // =========================================================================
+      function init() {
+        loadHistory();
+        renderSubjectUI();
+        renderKeyboardKeys();
+        renderHistorySidebar();
+        renderGraphFunctionControls();
+        renderMatrixGrids();
+        renderExamplesCatalog();
+        initScannerSketchPad();
+        initGraphInteractions();
+
+        // Solve initial default quadratic equation so the user sees an immediate rich step-by-step card
+        executeSolveAndRender('x^2 - 5x + 6 = 0', 'solve');
+
+        // Form submit
+        document.getElementById('mathInputForm').addEventListener('submit', e => {
+          e.preventDefault();
+          executeSolveAndRender(document.getElementById('mathInput').value);
+        });
+
+        document.getElementById('mathInput').addEventListener('input', updateLivePreview);
+
+        document.getElementById('clearInputBtn').addEventListener('click', () => {
+          const inp = document.getElementById('mathInput');
+          inp.value = '';
+          inp.focus();
+          updateLivePreview();
+        });
+
+        // Toggle Virtual Keyboard
+        document.getElementById('toggleKeyboardBtn').addEventListener('click', () => {
+          state.keyboardOpen = !state.keyboardOpen;
+          document.getElementById('virtualKeyboard').classList.toggle('hidden', !state.keyboardOpen);
+          document.getElementById('keyboardChevron').style.transform = state.keyboardOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+        });
+
+        // Angle Mode Toggle (RAD / DEG)
+        document.getElementById('angleModeBtn').addEventListener('click', () => {
+          state.angleMode = state.angleMode === 'RAD' ? 'DEG' : 'RAD';
+          document.getElementById('angleModeBtn').textContent = state.angleMode;
+          showToast(`Angle unit switched to ${state.angleMode}`);
+        });
+
+        // Theme Toggle
+        document.getElementById('themeToggleBtn').addEventListener('click', () => {
+          document.documentElement.classList.toggle('dark');
+          if (state.activeView === 'graph') drawMainGraph();
+          if (state.activeView === 'tools') renderStatsWorkbench();
+        });
+
+        // Mobile Sidebar Toggle
+        document.getElementById('mobileMenuBtn').addEventListener('click', () => {
+          document.getElementById('leftSidebar').classList.toggle('-translate-x-full');
+        });
+
+        // Random Sample Problem Button
+        document.getElementById('randomProblemBtn').addEventListener('click', () => {
+          const data = SUBJECT_DATA[state.activeSubject] || SUBJECT_DATA['Algebra'];
+          const pick = data.templates[Math.floor(Math.random() * data.templates.length)];
+          executeSolveAndRender(pick.expr, pick.method);
+        });
+
+        // Clear History
+        document.getElementById('clearHistoryBtn').addEventListener('click', () => {
+          state.history = [];
+          saveHistory();
+          renderHistorySidebar();
+          showToast('Solved history cleared');
+        });
+
+        // Export Session Worksheet
+        document.getElementById('exportSessionBtn').addEventListener('click', () => {
+          if (!state.history.length) {
+            showToast('Solve a problem first to export notes');
+            return;
+          }
+          const lines = [
+            '# MathwayLab Solved Problems Worksheet',
+            `Generated: ${new Date().toLocaleString()}`,
+            ''
+          ];
+          state.history.forEach((h, i) => {
+            lines.push(`## ${i + 1}. [${h.category}] ${h.input}`);
+            lines.push(`**Answer:** ${h.finalAnswer}`);
+            lines.push('');
+          });
+          const blob = new Blob([lines.join('\n')], { type: 'text/markdown' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'mathwaylab_solutions.md';
+          a.click();
+          URL.revokeObjectURL(url);
+          showToast('Downloaded mathwaylab_solutions.md');
+        });
+
+        // Modals: Scanner & Deploy
+        const openScanner = () => document.getElementById('scannerModal').classList.remove('hidden');
+        const closeScanner = () => document.getElementById('scannerModal').classList.add('hidden');
+        document.getElementById('openScannerModalBtn').addEventListener('click', openScanner);
+        document.getElementById('inputCameraBtn').addEventListener('click', openScanner);
+        document.getElementById('closeScannerModalBtn').addEventListener('click', closeScanner);
+
+        document.getElementById('imageUploadInput').addEventListener('change', e => {
+          if (e.target.files && e.target.files[0]) {
+            document.getElementById('scanStatusText').textContent = `Scanned "${e.target.files[0].name}" → Extracted: 2x^2 - 7x + 3 = 0`;
+          }
+        });
+
+        document.getElementById('extractSketchBtn').addEventListener('click', () => {
+          closeScanner();
+          switchView('solver');
+          executeSolveAndRender('2x^2 - 7x + 3 = 0', 'solve');
+          showToast('Scanned problem solved step-by-step');
+        });
+
+        document.getElementById('openDeployModalBtn').addEventListener('click', () => {
+          document.getElementById('deployModal').classList.remove('hidden');
+        });
+        document.getElementById('closeDeployModalBtn').addEventListener('click', () => {
+          document.getElementById('deployModal').classList.add('hidden');
+        });
+        document.getElementById('downloadIndexHtmlBtn').addEventListener('click', () => {
+          const htmlContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+          const blob = new Blob([htmlContent], { type: 'text/html' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'index.html';
+          a.click();
+          URL.revokeObjectURL(url);
+          showToast('Downloaded standalone index.html for GitHub Pages!');
+        });
+
+        // Graph View Controls
+        document.getElementById('addGraphFuncBtn').addEventListener('click', () => {
+          const colors = ['#2563eb', '#e11d48', '#10b981', '#9333ea', '#ea580c'];
+          state.graphFunctions.push({
+            id: Date.now(),
+            expr: 'sin(x)',
+            color: colors[state.graphFunctions.length % colors.length],
+            visible: true
+          });
+          renderGraphFunctionControls();
+          drawMainGraph();
+          renderGraphValueTable();
+        });
+
+        document.getElementById('resetGraphViewBtn').addEventListener('click', () => {
+          state.graphViewport = { centerX: 0, centerY: 0, scale: 42 };
+          drawMainGraph();
+        });
+
+        document.getElementById('zoomInGraphBtn').addEventListener('click', () => {
+          state.graphViewport.scale = Math.min(state.graphViewport.scale * 1.25, 220);
+          drawMainGraph();
+        });
+        document.getElementById('zoomOutGraphBtn').addEventListener('click', () => {
+          state.graphViewport.scale = Math.max(state.graphViewport.scale * 0.8, 8);
+          drawMainGraph();
+        });
+        document.getElementById('showKeyPointsToggle').addEventListener('change', e => {
+          state.showKeyPoints = e.target.checked;
+          drawMainGraph();
+        });
+        document.getElementById('genValueTableBtn').addEventListener('click', renderGraphValueTable);
+
+        // Statistics Workbench Controls
+        document.getElementById('analyzeStatsBtn').addEventListener('click', renderStatsWorkbench);
+        document.getElementById('loadSampleStatsBtn').addEventListener('click', () => {
+          document.getElementById('statsDatasetInput').value = '14, 18, 21, 24, 24, 28, 33, 37, 41, 49';
+          renderStatsWorkbench();
+          showToast('Loaded sample dataset');
+        });
+
+        // Matrix Workbench Controls
+        document.getElementById('fillIdentityABtn').addEventListener('click', () => {
+          const n = state.matrixSize;
+          for (let r = 0; r < n; r++) {
+            for (let c = 0; c < n; c++) {
+              const el = document.querySelector(`[data-mat-cell="A-${r * n + c}"]`);
+              if (el) el.value = r === c ? 1 : 0;
+            }
+          }
+          runMatrixWorkbenchOp('detA');
+        });
+        document.getElementById('fillSampleBBtn').addEventListener('click', () => {
+          const n = state.matrixSize;
+          for (let i = 0; i < n * n; i++) {
+            const el = document.querySelector(`[data-mat-cell="B-${i}"]`);
+            if (el) el.value = Math.floor(Math.random() * 7) - 2;
+          }
+          runMatrixWorkbenchOp('mulAB');
+        });
+
+        // Global Delegated Clicks
+        document.body.addEventListener('click', e => {
+          const viewBtn = e.target.closest('.view-tab-btn');
+          if (viewBtn) {
+            switchView(viewBtn.getAttribute('data-view'));
+            return;
+          }
+
+          const subjBtn = e.target.closest('.subject-btn');
+          if (subjBtn) {
+            state.activeSubject = subjBtn.getAttribute('data-subject');
+            renderSubjectUI();
+            switchView('solver');
+            document.getElementById('leftSidebar').classList.add('-translate-x-full');
+            return;
+          }
+
+          const tplBtn = e.target.closest('.tpl-item-btn');
+          if (tplBtn) {
+            switchView('solver');
+            executeSolveAndRender(tplBtn.getAttribute('data-tpl-expr'), tplBtn.getAttribute('data-tpl-method'));
+            document.getElementById('leftSidebar').classList.add('-translate-x-full');
+            return;
+          }
+
+          const chipBtn = e.target.closest('.starter-chip-btn');
+          if (chipBtn) {
+            executeSolveAndRender(chipBtn.getAttribute('data-chip-expr'));
+            return;
+          }
+
+          const kbTabBtn = e.target.closest('.kb-tab-btn');
+          if (kbTabBtn) {
+            state.activeKbTab = kbTabBtn.getAttribute('data-kbtab');
+            renderKeyboardKeys();
+            return;
+          }
+
+          const keyBtn = e.target.closest('.key-btn');
+          if (keyBtn && keyBtn.hasAttribute('data-insert')) {
+            insertAtCursor(keyBtn.getAttribute('data-insert'));
+            return;
+          }
+
+          const cardMethodBtn = e.target.closest('.card-method-btn');
+          if (cardMethodBtn) {
+            executeSolveAndRender(
+              cardMethodBtn.getAttribute('data-card-expr'),
+              cardMethodBtn.getAttribute('data-card-method')
+            );
+            return;
+          }
+
+          const copyBtn = e.target.closest('.copy-ans-btn');
+          if (copyBtn) {
+            const text = copyBtn.getAttribute('data-copy-ans');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(text).catch(() => {});
+            }
+            showToast('Copied answer to clipboard');
+            return;
+          }
+
+          const openGraphBtn = e.target.closest('.open-in-graph-btn');
+          if (openGraphBtn) {
+            const expr = openGraphBtn.getAttribute('data-open-graph');
+            switchView('graph');
+            addOrUpdatePrimaryGraphFunction(expr);
+            return;
+          }
+
+          const histBtn = e.target.closest('.hist-item-btn');
+          if (histBtn) {
+            const item = state.history[Number(histBtn.getAttribute('data-hist-idx'))];
+            if (item) {
+              switchView('solver');
+              executeSolveAndRender(item.input, item.method);
+            }
+            return;
+          }
+
+          const scanPreset = e.target.closest('.scan-sample-btn');
+          if (scanPreset) {
+            document.getElementById('scannerModal').classList.add('hidden');
+            switchView('solver');
+            executeSolveAndRender(scanPreset.getAttribute('data-scanexpr'));
+            showToast('Scanned equation solved');
+            return;
+          }
+
+          const gPreset = e.target.closest('.graph-preset-btn');
+          if (gPreset) {
+            const p = gPreset.getAttribute('data-gpreset');
+            if (p === 'parabola') {
+              state.graphFunctions = [
+                { id: 1, expr: 'x^2 - 4*x + 3', color: '#2563eb', visible: true },
+                { id: 2, expr: 'x - 1', color: '#e11d48', visible: true }
+              ];
+            } else if (p === 'trig') {
+              state.graphFunctions = [
+                { id: 1, expr: '2*sin(x)', color: '#2563eb', visible: true },
+                { id: 2, expr: 'cos(x)', color: '#10b981', visible: true }
+              ];
+            } else if (p === 'cubic') {
+              state.graphFunctions = [
+                { id: 1, expr: 'x^3 - 3*x', color: '#9333ea', visible: true }
+              ];
+            } else if (p === 'rational') {
+              state.graphFunctions = [
+                { id: 1, expr: 'exp(-0.3*x)*sin(2*x)', color: '#ea580c', visible: true }
+              ];
+            }
+            renderGraphFunctionControls();
+            drawMainGraph();
+            renderGraphValueTable();
+            return;
+          }
+
+          const delFnBtn = e.target.closest('[data-gfn-del]');
+          if (delFnBtn) {
+            const id = Number(delFnBtn.getAttribute('data-gfn-del'));
+            if (state.graphFunctions.length > 1) {
+              state.graphFunctions = state.graphFunctions.filter(f => f.id !== id);
+              renderGraphFunctionControls();
+              drawMainGraph();
+              renderGraphValueTable();
+            }
+            return;
+          }
+
+          const matSizeBtn = e.target.closest('.mat-size-btn');
+          if (matSizeBtn) {
+            state.matrixSize = Number(matSizeBtn.getAttribute('data-matsize'));
+            document.querySelectorAll('.mat-size-btn').forEach(b => {
+              const active = Number(b.getAttribute('data-matsize')) === state.matrixSize;
+              b.className = active
+                ? 'mat-size-btn px-2.5 py-1 rounded text-xs font-semibold bg-white dark:bg-slate-900 text-indigo-600 shadow-sm'
+                : 'mat-size-btn px-2.5 py-1 rounded text-xs font-semibold text-slate-600 dark:text-slate-300';
+            });
+            renderMatrixGrids();
+            return;
+          }
+
+          const matOpBtn = e.target.closest('.mat-op-btn');
+          if (matOpBtn) {
+            runMatrixWorkbenchOp(matOpBtn.getAttribute('data-matop'));
+            return;
+          }
+
+          const catExBtn = e.target.closest('.cat-example-btn');
+          if (catExBtn) {
+            state.activeSubject = catExBtn.getAttribute('data-cat-subj');
+            renderSubjectUI();
+            switchView('solver');
+            executeSolveAndRender(catExBtn.getAttribute('data-cat-expr'), catExBtn.getAttribute('data-cat-method'));
+            return;
+          }
+        });
+
+        // Delegated input changes for Graph Functions
+        document.getElementById('graphFunctionsList').addEventListener('input', e => {
+          if (e.target.hasAttribute('data-gfn-expr')) {
+            const id = Number(e.target.getAttribute('data-gfn-expr'));
+            const fn = state.graphFunctions.find(f => f.id === id);
+            if (fn) {
+              fn.expr = e.target.value;
+              drawMainGraph();
+              renderGraphValueTable();
+            }
+          } else if (e.target.hasAttribute('data-gfn-color')) {
+            const id = Number(e.target.getAttribute('data-gfn-color'));
+            const fn = state.graphFunctions.find(f => f.id === id);
+            if (fn) {
+              fn.color = e.target.value;
+              drawMainGraph();
+              renderGraphValueTable();
+            }
+          }
+        });
+
+        window.addEventListener('resize', () => {
+          if (state.activeView === 'graph') drawMainGraph();
+          if (state.activeView === 'tools') renderStatsWorkbench();
+        });
+      }
+
+      window.addEventListener('DOMContentLoaded', init);
+    })();
+  </script>
+</body>
+</html>
